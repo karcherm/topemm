@@ -45,7 +45,6 @@ parseg		DW	0
 ;--------------------------------------------------------------------
 ;	EMM driver work data area
 ;--------------------------------------------------------------------
-backup_count	DB	0		;mapping data backup count
 OSE_flag	DW	0		;OS/E function enable flag
 OSE_fast	DW	0		;OS/E fast access flag
 access_key_h	DW	0		;OS/E access key high
@@ -54,6 +53,7 @@ alter_map	LABEL	DWORD
 alter_map_off	DW	0
 alter_map_seg	DW	0
 page_ptr	DW	alloc_page	;allocate page buffer pointer.
+free_page_ptr	DW	alloc_page_end - 2
 page_frame_seg	DW	0E000h		;Default physical page frame address
 total_pages	DW	0		;total logical page count
 un_alloc_pages	DW	PAGE_MAX	;unallocate logical page count
@@ -89,18 +89,15 @@ backup_map	LABEL	WORD
 ;
 backup_flags	LABEL	BYTE
 		db	BACK_MAX DUP(0)
+backup_count	DB	0		;mapping data backup count
 ;
 ;	allocate data area
+;	from front: list of page mapping codes for allocated pages
+;	from back:  list of page mapping codes for free pages
 ;
 alloc_page	LABEL	WORD
 		dw	PAGE_MAX DUP(-1)
-;
-;	logical page data
-;	low 15 bits (only 11 actually used): mapping value
-;	high bit: set if page is free
-;
-log_page	LABEL	WORD
-		dw	PAGE_MAX DUP(-1)
+alloc_page_end	LABEL	WORD
 ;
 ;====================================================================
 ;
@@ -453,9 +450,7 @@ set_pages_map	PROC	NEAR
 set_pages_map2:
 		MOV	AL,CS:[DI].phys_page_index
 		OUT	0E8h,AL
-		MOV	BX,CS:[DI].log_page_data
-		SHL	BX,1
-		MOV	AX,CS:[BX].log_page
+		MOV	AX,CS:[DI].log_page_data
 		OUT	0EAh,AX			;mapping physical pages...
 		ADD	DI,SIZE phys_page_struct
 		LOOP	set_pages_map2
@@ -591,23 +586,12 @@ f44:
 		MOV	[SI].page_address,DI	;set page buffer pointer
 		push	cs
 		pop	es
-		MOV	SI,OFFSET log_page
-		XOR	AX,AX
+		MOV	SI,free_page_ptr
 		MOV	CX,BX
-		jcxz	f48
-		jmp	short f47
-f4a:
-		ADD	SI,LOG_SIZE
-		INC	AX
-f47:
-		CMP	WORD PTR [SI], 0	;unallocated page ?
-		JGE	f4a
-		AND	BYTE PTR [SI+1], 07Fh	;EMM handle set
-		STOSW				;logical page no. set
-		LOOP	f4a
-f48:
+		REP	MOVSW
 		MOV	[BP].dx_save,DX		;return EMM handle
 		MOV	page_ptr,DI
+		MOV	free_page_ptr,SI
 		JMP	noerr			;exit
 f49:
 		JMP	err89			;error exit
@@ -658,8 +642,6 @@ f54:
 		MOV	AL,[DI].phys_page_index
 		OUT	0E8h,AL
 		JMP	$+2
-		SHL	BX,1
-		MOV	BX,[BX].log_page
 		XCHG	AX,BX
 		OUT	0EAh,AX
 f56:
@@ -698,27 +680,27 @@ func6:
 		MOV	cx,[BX].alloc_page_count
 		JCXZ	f6c			;page = 0 ?
 		add	un_alloc_pages,cx	;add unallocated pages
-		MOV	DI,[BX].page_address	;deallocate logical page...
-		mov	si,di
-		PUSH	BX
-f65:
-		MOV	BX,[si]
-		SHL	BX,1
-		OR	BYTE PTR [BX+1].log_page,80H
-		add	si,2
-		LOOP	f65
-		POP	BX
+		MOV	SI,[BX].page_address	;deallocate logical page...
+		ADD	SI,CX
+		ADD	SI,CX
+		MOV	AX,SI			;start of pages from next handle
+		DEC	SI
+		DEC	SI
+		MOV	DI,free_page_ptr
+		DEC	DI
+		DEC	DI
+		STD
+		REP	MOVSW			;pages from this handle to free list
+		CLD
+		INC	DI
+		INC	DI
+		MOV	free_page_ptr,DI
+		LEA	DI,[SI+2]
+		XCHG	SI,AX			;pages from later handles
 		MOV	CX,page_ptr
 		SUB	CX,SI
 		SHR	CX,1
-		JCXZ	f62
 		REPZ	MOVSW
-f62:
-		MOV	cx,[BX].alloc_page_count
-		JCXZ	f68
-		MOV	AX,UNALLOC
-		REPZ	STOSW
-f68:
 		XOR	DI,DI			;change page address....
 		MOV	SI,[BX].page_address	;get page address.
 		MOV	ax,[BX].alloc_page_count;get allocated page count.
@@ -1271,25 +1253,8 @@ func18:
 		CMP	total_pages,BX		;request total size over ?
 		JC	f182			;yes
 		MOV	ax,[SI].alloc_page_count;get page size to handle
-		OR	BX,BX			;reallocate count = 0?
-		JNZ	f184
-		MOV	CX,AX
-		JCXZ	f18a			;CX = 0 case?
-		MOV	DI,[SI].page_address	;BX = 0 case...
-		add	un_alloc_pages,ax	;add unallocated pages
-		PUSH	BX
-f185:
-		MOV	BX,[DI]
-		SHL	BX,1
-		OR	BYTE PTR [BX+1].log_page,80H ;unallocate logical page
-		add	di,2
-		LOOP	f185
-		POP	BX
-		JMP	short f18l
-f184:
 		CMP	AX,BX			;check reallocation/allocated
 		JNZ	f18c			;pages.
-f18a:
 		JMP	noerr			;same size case.
 f18c:
 		JNC	f183			;BX < allocated count?
@@ -1297,45 +1262,30 @@ f18c:
 f183:
 		MOV	CX,AX			;BX < allocated pages case...
 		SUB	CX,BX
-		MOV	DI,[SI].page_address	;BX = 0 case...
-		MOV	AX,BX
-		SHL	AX,1
-		ADD	DI,AX
-		add	un_alloc_pages,cx	;add unallocated pages
-		PUSH	BX
-f18b:
-		MOV	BX,[DI]
-		SHL	BX,1
-		OR	BYTE PTR [BX+1].log_page,80H ;unallocate logical page
-		add	di,2
-		LOOP	f18b
-		POP	BX
-f18l:
-		MOV	CX,page_ptr		;clear & sort page buffer...
-		MOV	AX,BX
-		SHL	AX,1
-		ADD	AX,[SI].page_address
-		SUB	CX,AX
 		PUSH	SI
-		MOV	DI,[SI].page_address
-		MOV	AX,BX
-		SHL	AX,1
-		ADD	DI,AX
-		MOV	ax,[SI].alloc_page_count
-		MOV	SI,[SI].page_address
-		SHL	AX,1
-		ADD	SI,AX
-		SHR	CX,1
-		JCXZ	f18e
-		REPZ	MOVSW
-f18e:
+		MOV	SI,[SI].page_address	;deallocate logical page...
+		ADD	SI,CX
+		ADD	SI,CX
+		ADD	un_alloc_pages,cx	;add unallocated pages
+		MOV	AX,SI			;start of pages from next handle
+		DEC	SI
+		DEC	SI
+		MOV	DI,free_page_ptr
+		DEC	DI
+		DEC	DI
+		STD
+		REP	MOVSW			;pages from this handle to free list
+		CLD
+		INC	DI
+		INC	DI
+		MOV	free_page_ptr,DI
+		LEA	DI,[SI+2]
+		XCHG	SI,AX			;pages from later handles
 		MOV	CX,page_ptr
-		SUB	CX,DI
+		SUB	CX,SI
 		SHR	CX,1
-		JCXZ	f18f
-		MOV	AX,UNALLOC
-		REPZ	STOSW
-f18f:
+		REPZ	MOVSW
+		XOR	DI,DI			;change page address....
 		POP	SI
 		MOV	ax,[SI].alloc_page_count
 		MOV	[SI].alloc_page_count,bx;set EMM handle used page count
@@ -1361,6 +1311,7 @@ f18m:
 		MOV	[SI].page_address,0	;clear page buffer pointer
 f18o:
 		JMP	noerr			;exit.
+
 f187:
 		MOV	ax,[SI].alloc_page_count
 		MOV	[BP].bx_save,AX
@@ -1370,6 +1321,7 @@ f186:
 		SUB	CX,AX
 		cmp	un_alloc_pages,cx	;request unallocate size over ?
 		jb	f187			;no
+		SUB	un_alloc_pages,CX	;request unallocate size over ?
 		PUSH	SI			;move page buffer...
 		MOV	DI,page_ptr
 		CMP	[SI].page_address,0	;not poniter address?
@@ -1390,35 +1342,14 @@ f18p:
 		MOV	SI,page_ptr
 		DEC	SI
 		STD
-		JCXZ	f18g
 		REPZ	MOVSB
-f18g:
+		CLD
+		LEA	DI,[SI+1]
 		POP	CX
 f18q:
-		SHL	CX,1
-		ADD	page_ptr,CX		;pointer add
-		POP	SI
-		CLD
-		MOV	DI,[SI].page_address	;allocate add pages...
-		MOV	ax,[SI].alloc_page_count
-		MOV	CX,BX
-		SUB	CX,AX
-		SHL	AX,1
-		ADD	DI,AX
-		PUSH	SI
-		MOV	SI,OFFSET log_page
-		XOR	AX,AX
-		sub	un_alloc_pages,cx
-		JMP	short f188
-f189:
-		ADD	SI,LOG_SIZE
-		INC	AX
-f188:
-		CMP	WORD PTR [SI],0		;unallocated page ?
-		JGE	f189
-		AND	BYTE PTR [SI+1],07FH
-		STOSW
-		LOOP	f189
+		MOV	SI,free_page_ptr
+		REP	MOVSW
+		MOV	free_page_ptr,SI
 		POP	SI
 		MOV	ax,[SI].alloc_page_count
 		MOV	[SI].alloc_page_count,bx;set EMM handle used page count
@@ -1439,6 +1370,7 @@ f18h:
 		ADD	[DI].page_address,AX
 f18n:
 		LOOP	f18i
+		ADD	page_ptr,AX
 		JMP	noerr			;exit
 f18d:
 		POP	SI
@@ -2820,8 +2752,7 @@ set_phys_page	PROC	NEAR
 		PUSH	BX
 		MOV	AL,CS:[DI].phys_page_index
 		OUT	0E8h,AL
-		SHL	BX,1
-		MOV	AX,[BX].log_page
+		MOV	AX,BX
 		OUT	0EAh,AX
 		POP	BX
 		MOV	CS:[DI].emm_handle2,DX	;handle
@@ -3061,7 +2992,7 @@ ckems5:
 ckems6:
 		TEST	AL,3h
 		JNZ	ckems7
-		MOV	[DI].log_page,SI
+		MOV	[DI].alloc_page,SI
 		ADD	DI,2
 ckems7:
 		SHR	AL,2
@@ -3102,7 +3033,7 @@ ckems7:
 ckems8:
 		CMP	AX,BX
 		JAE	ckems9
-		MOV	[DI].log_page,AX
+		MOV	[DI].alloc_page,AX
 		ADD	DI,2
 		INC	AX
 		JMP	ckems8
@@ -3134,7 +3065,7 @@ ckems11:
 		RET
 ckems12:
 		MOV	first_map_idx,AL
-		MOV	DI,OFFSET log_page
+		MOV	DI,OFFSET alloc_page
 		ADD	AX,48			;EMS map reg nr to page nr
 		MOV	CX,33
 		REPNE	SCASW			;page must be mappable
@@ -3237,15 +3168,19 @@ ramch14:
 		OR	AL,4			;system memory parity disable
 		and	al,0feh
 		OUT	I8042+1,AL
-		MOV	DI,OFFSET log_page
+		MOV	SI,OFFSET alloc_page-2
+		MOV	DI,OFFSET alloc_page_end
 		MOV	CX,[total_pages]
+		ADD	SI,CX
+		ADD	SI,CX
 		XOR	BX,BX
 ramch9:
-		PUSH	CX
 		MOV	AL,[map_table.phys_page_index]
 		OUT	0E8h,AL
-		MOV	DX,[DI]
-		MOV	AX,DX
+		STD
+		LODSW
+		CLD
+		MOV	DX,AX
 		OUT	0EAh,AX
 		CALL	imgchk			; checks the page is RAM
 		jc	ramch17
@@ -3265,14 +3200,15 @@ ramch3:
 ramch4:
 		jc	ramch8
 ramch2:
-		OR	BYTE PTR [DI+1],80H	;mark page available
 		INC	BX
+		DEC	DI
+		DEC	DI
+		MOV	[DI],DX
 ramch17:
-		ADD	DI,LOG_SIZE
 ramch8:
-		POP	CX
 		LOOP	ramch9
 ramch16:
+		MOV	free_page_ptr,DI
 		MOV	total_pages,BX
 		MOV	un_alloc_pages,BX
 		IN	AL,I8042+1		;enable system memory parity..
