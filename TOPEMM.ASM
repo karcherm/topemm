@@ -3141,7 +3141,41 @@ ckems9:
 		MOV	SI,OFFSET high_msg
 		CALL	strdsp
 ckems10:
+		MOV	AX,page_frame_seg
+		TEST	AX,03FFh
+		JNZ	ckems11
+		SHR	AX,10			;One page = 2^10 paragraphs
+		SUB	AL,48			;first mapping register for page 48
+		JC	ckems11			;before C000
+		CMP	AL,8			;after E000
+		JNA	ckems12
+ckems11:
+		MOV	SI,OFFSET bad_frame_msg
+		CALL	strdsp
+		STC
+		RET
+ckems12:
+		MOV	first_map_idx,AL
+		MOV	DI,OFFSET log_page_map
+		ADD	AX,48			;EMS map reg nr to page nr
+		MOV	CX,33
+		REPNE	SCASW			;page must be mappable
+		JNE	ckems13
+		INC	AX
+		CMP	AX,[DI]
+		JNE	ckems13
+		INC	AX
+		CMP	AX,[DI+2]
+		JNE	ckems13
+		INC	AX
+		CMP	AX,[DI+4]
+		JNE	ckems13
 		CLC				;reset CF
+		RET
+ckems13:
+		MOV	SI,OFFSET coll_shdw_msg
+		CALL	strdsp
+		STC
 		RET
 ckemsio		ENDP
 ;--------------------------------------------------------------------
@@ -3156,10 +3190,8 @@ ramchk		PROC	NEAR
 		POP	DS
 		MOV	DI,OFFSET map_table
 		MOV	SI,page_frame_seg
-		MOV	BX,SI			;Calculate mapping register index
-		SHR	BX,10			;One page = 2^10 paragraphs
-		SUB	BL,48			;first mapping register for page 48
 		MOV	DX,0Fh
+		MOV	BL,first_map_idx
 		MOV	CL,BL
 		SHL	DX,CL
 		MOV	CX,PHYS_PAGES
@@ -3672,8 +3704,11 @@ info_msg	db	 CR,LF
 		db	'Defaults in parentheses.',CR,LF,'$'
 shadow_msg	DB	'00000K unused shadow RAM detected.',CR,LF,'$'
 high_msg	DB	'00000K high RAM detected.',CR,LF,'$'
+bad_frame_msg	DB	'Page frame base address must be 16K aligned between C000 and E000',CR,LF,'$'
+coll_shdw_msg	DB	'Page frame collides with shadow RAM',CR,LF,'$'
 pageofs		DB	0		;logical page no. offset data
 sysflg		DB	0		;system option flag
+first_map_idx	DB	0		;index of first mapping register for page frame
 chkchr		DW	55AAH
 code		ENDS
 		END	INFO
