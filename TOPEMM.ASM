@@ -45,7 +45,6 @@ parseg		DW	0
 ;--------------------------------------------------------------------
 ;	EMM driver work data area
 ;--------------------------------------------------------------------
-emm_flag	db	0		;EMM driver install status
 backup_count	DB	0		;mapping data backup count
 OSE_flag	DW	0		;OS/E function enable flag
 OSE_fast	DW	0		;OS/E fast access flag
@@ -96,15 +95,11 @@ backup_flags	LABEL	BYTE
 alloc_page	LABEL	WORD
 		dw	PAGE_MAX DUP(-1)
 ;
-;	logical page kanri data
-;	55AAH:not used , 0 - 254:used , FFFFH:bad or non
+;	logical page data
+;	low 15 bits (only 11 actually used): mapping value
+;	high bit: set if page is free
 ;
 log_page	LABEL	WORD
-		dw	PAGE_MAX DUP(-1)
-;
-;	logical page addressing value
-;
-log_page_map	LABEL	WORD
 		dw	PAGE_MAX DUP(-1)
 ;
 ;====================================================================
@@ -156,19 +151,13 @@ emmint		PROC	FAR
 		CMP	AL,10h		;Verify that not more than 16 commands.
 		JA	cmderr		;Ah, well, error out.
 		OR	AL,AL		;init. command?
-		JNZ	emmchk		;check EMS flag.
+		JNZ	exit		;just "OK"
 		JMP	emminit		;EMS Driver initial.
 cmderr:
 		MOV	AL,3		;Set unknown command error #.
 err_exit:				;
 		MOV	AH,10000001B	;Set error and done bits.
 		JMP	short exit1	;Quick way out.
-;
-;	EMM driver install check routine
-;
-emmchk:
-		CMP	CS:emm_flag,1	;EMM install flag on?
-		JNZ	err_exit	;no
 exit:
 		MOV	AH,00000001B	;Set done bit for MSDOS.
 exit1:
@@ -466,7 +455,7 @@ set_pages_map2:
 		OUT	0E8h,AL
 		MOV	BX,CS:[DI].log_page_data
 		SHL	BX,1
-		MOV	AX,CS:[BX].log_page_map
+		MOV	AX,CS:[BX].log_page
 		OUT	0EAh,AX			;mapping physical pages...
 		ADD	DI,SIZE phys_page_struct
 		LOOP	set_pages_map2
@@ -611,9 +600,9 @@ f4a:
 		ADD	SI,LOG_SIZE
 		INC	AX
 f47:
-		CMP	WORD PTR [SI],NOT_USE	;unallocated page ?
-		JNZ	f4a
-		MOV	[SI],DX			;EMM handle set
+		CMP	WORD PTR [SI], 0	;unallocated page ?
+		JGE	f4a
+		AND	BYTE PTR [SI+1], 07Fh	;EMM handle set
 		STOSW				;logical page no. set
 		LOOP	f4a
 f48:
@@ -670,7 +659,7 @@ f54:
 		OUT	0E8h,AL
 		JMP	$+2
 		SHL	BX,1
-		MOV	BX,[BX].log_page_map
+		MOV	BX,[BX].log_page
 		XCHG	AX,BX
 		OUT	0EAh,AX
 f56:
@@ -715,7 +704,7 @@ func6:
 f65:
 		MOV	BX,[si]
 		SHL	BX,1
-		MOV	[BX].log_page,NOT_USE
+		OR	BYTE PTR [BX+1].log_page,80H
 		add	si,2
 		LOOP	f65
 		POP	BX
@@ -1292,7 +1281,7 @@ func18:
 f185:
 		MOV	BX,[DI]
 		SHL	BX,1
-		MOV	[BX].log_page,NOT_USE	;unallocate logical page
+		OR	BYTE PTR [BX+1].log_page,80H ;unallocate logical page
 		add	di,2
 		LOOP	f185
 		POP	BX
@@ -1317,7 +1306,7 @@ f183:
 f18b:
 		MOV	BX,[DI]
 		SHL	BX,1
-		MOV	[BX].log_page,NOT_USE	;unallocate logical page
+		OR	BYTE PTR [BX+1].log_page,80H ;unallocate logical page
 		add	di,2
 		LOOP	f18b
 		POP	BX
@@ -1425,11 +1414,9 @@ f189:
 		ADD	SI,LOG_SIZE
 		INC	AX
 f188:
-		CMP	WORD PTR [SI],UNMAP	;logical page end?
-		JZ	f18d
-		CMP	WORD PTR [SI],NOT_USE	;unallocated page ?
-		JNZ	f189
-		MOV	WORD PTR [SI],DX
+		CMP	WORD PTR [SI],0		;unallocated page ?
+		JGE	f189
+		AND	BYTE PTR [SI+1],07FH
 		STOSW
 		LOOP	f189
 		POP	SI
@@ -2834,7 +2821,7 @@ set_phys_page	PROC	NEAR
 		MOV	AL,CS:[DI].phys_page_index
 		OUT	0E8h,AL
 		SHL	BX,1
-		MOV	AX,[BX].log_page_map
+		MOV	AX,[BX].log_page
 		OUT	0EAh,AX
 		POP	BX
 		MOV	CS:[DI].emm_handle2,DX	;handle
@@ -2925,7 +2912,6 @@ emminit2:
 		MOV	CX,AX
 		MOV	AX,CS
 		ADD	AX,CX
-		MOV	emm_flag,1		;set EMM install flag.
 		LDS	BX,ptrsav
 		MOV	[BX].brkoff,0		;break address offset set.
 		MOV	[BX].brkseg,AX		;break address segment set.
@@ -3075,7 +3061,7 @@ ckems5:
 ckems6:
 		TEST	AL,3h
 		JNZ	ckems7
-		MOV	[DI].log_page_map,SI
+		MOV	[DI].log_page,SI
 		ADD	DI,2
 ckems7:
 		SHR	AL,2
@@ -3116,7 +3102,7 @@ ckems7:
 ckems8:
 		CMP	AX,BX
 		JAE	ckems9
-		MOV	[DI].log_page_map,AX
+		MOV	[DI].log_page,AX
 		ADD	DI,2
 		INC	AX
 		JMP	ckems8
@@ -3148,7 +3134,7 @@ ckems11:
 		RET
 ckems12:
 		MOV	first_map_idx,AL
-		MOV	DI,OFFSET log_page_map
+		MOV	DI,OFFSET log_page
 		ADD	AX,48			;EMS map reg nr to page nr
 		MOV	CX,33
 		REPNE	SCASW			;page must be mappable
@@ -3258,7 +3244,7 @@ ramch9:
 		PUSH	CX
 		MOV	AL,[map_table.phys_page_index]
 		OUT	0E8h,AL
-		MOV	DX,[DI+log_page_map-log_page]
+		MOV	DX,[DI]
 		MOV	AX,DX
 		OUT	0EAh,AX
 		CALL	imgchk			; checks the page is RAM
@@ -3279,7 +3265,7 @@ ramch3:
 ramch4:
 		jc	ramch8
 ramch2:
-		MOV	[DI],NOT_USE
+		OR	BYTE PTR [DI+1],80H	;mark page available
 		INC	BX
 ramch17:
 		ADD	DI,LOG_SIZE
