@@ -1,16 +1,16 @@
 ;*****************************************************************
-;*							         *
-;*							         *
-;*	EMM/EMS driver program for BOCARAM30 Memory board        *
-;*							         *
-;*							         *
+;*                                                               *
+;*                                                               *
+;*      EMM/EMS driver program for BOCARAM30 Memory board        *
+;*                                                               *
+;*                                                               *
 ;*****************************************************************
 ;
 ;       Структура физической страницы EMS
 ;
 phys_page_struct                STRUC
     Emm_Handle2                 DW      ?       ;дескриптор-владелец страницы
-    Phys_page_port		DW	?	;physical page i/o port address
+    Phys_page_port              DW      ?       ;physical page i/o port address
     Phys_Seg_Addr               DW      ?       ;физический сегментный адрес страницы
     Log_Page_Data               DB      ?       ;номер логической страницы,картированной
 phys_page_struct                ENDS            ;на эту физическую страницу
@@ -80,35 +80,35 @@ hardware_info_struct            STRUC
     DMA_channel_operation       DW      ?
 hardware_info_struct            ENDS
 
-HANDLE_CNT		EQU	64	;max handle count
-PAGE_MAX		EQU	128	;max logical page count
-BACK_MAX		EQU	5	;max mapping data backup count
-I8042			EQU	60H	;i8042 i/o port address
-TIME_OUT		EQU	1000	;
-NOT_USE			EQU	0AA55H	;not used logical page code
-NON			EQU	0FFFFH	;non or bad logical page code
-CR			EQU	0DH	;Carriage Return code
-LF			EQU	0AH	;Line Feed code
-TAB			EQU	09H	;TAB code
-; JJP DIS_EMS		EQU	0	;physical page disable data
-DIS_EMS			EQU	0FFH	;physical page disable data (lo-tech cards)
-HANDLE_NAME_SIZE	EQU	8	;EMM handle name byte size
-UNMAP			EQU	0FFFFH	;unmap code
-UNALLOC			EQU	0FFFFH	;unallocate code
-PUSH_REG		EQU	8 * 2	;push register size
-EMMWORK			EQU	50	;EMM driver work area size
-RET_SP			EQU	EMMWORK+PUSH_REG+6+10	;int67 stack size
-PHYS_PAGES		EQU	4	;physical page count
-RAW_PAGES		EQU	400H	;raw page size (16KB)
-CONTEXT_SIZE		EQU	SIZE phys_page_struct * PHYS_PAGES
-ALTER_REGS		EQU	0	;alter map register set count
-DMA_REGS		EQU	0	;alter DMA register set count
-DMA_CHANNEL		EQU	0	;DMA channel number
-VOLATILE		EQU	0	;volatile
-NON_VOLATILE		EQU	1	;non volatile
-F23_RETSP		EQU	10	;
-LOG_SIZE		EQU	2	;logical page flag data size
-FLAG_SIZE		EQU	2	;handle flag size
+HANDLE_CNT              EQU     64      ;max handle count
+PAGE_MAX                EQU     128     ;max logical page count
+BACK_MAX                EQU     5       ;max mapping data backup count
+I8042                   EQU     60H     ;i8042 i/o port address
+TIME_OUT                EQU     1000    ;
+NOT_USE                 EQU     0AA55H  ;not used logical page code
+NON                     EQU     0FFFFH  ;non or bad logical page code
+CR                      EQU     0DH     ;Carriage Return code
+LF                      EQU     0AH     ;Line Feed code
+TAB                     EQU     09H     ;TAB code
+; JJP DIS_EMS           EQU     0       ;physical page disable data
+DIS_EMS                 EQU     0FFH    ;physical page disable data (lo-tech cards)
+HANDLE_NAME_SIZE        EQU     8       ;EMM handle name byte size
+UNMAP                   EQU     0FFFFH  ;unmap code
+UNALLOC                 EQU     0FFFFH  ;unallocate code
+PUSH_REG                EQU     8 * 2   ;push register size
+EMMWORK                 EQU     50      ;EMM driver work area size
+RET_SP                  EQU     EMMWORK+PUSH_REG+6+10   ;int67 stack size
+PHYS_PAGES              EQU     4       ;physical page count
+RAW_PAGES               EQU     400H    ;raw page size (16KB)
+CONTEXT_SIZE            EQU     SIZE phys_page_struct * PHYS_PAGES
+ALTER_REGS              EQU     0       ;alter map register set count
+DMA_REGS                EQU     0       ;alter DMA register set count
+DMA_CHANNEL             EQU     0       ;DMA channel number
+VOLATILE                EQU     0       ;volatile
+NON_VOLATILE            EQU     1       ;non volatile
+F23_RETSP               EQU     10      ;
+LOG_SIZE                EQU     2       ;logical page flag data size
+FLAG_SIZE               EQU     2       ;handle flag size
 
 ;
 ;       function 15 struct

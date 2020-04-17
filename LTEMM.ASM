@@ -1,12 +1,12 @@
 		PAGE	90,132
 		NAME	LTEMM
-                include LTEMM.MAC	; macros
-                include LTEMM.INC	; structures
+		include LTEMM.MAC	; macros
+		include LTEMM.INC	; structures
 ;
 ;************************************************************************
-;*							        	*
+;*									*
 ;*	EMS 4.0 Driver for Lo-tech 2MB EMS Board, rev.01, Mar-14	*
-;*							        	*
+;*									*
 ;*	http://www.lo-tech.co.uk/wiki/2MB-EMS-Board			*
 ;*	http://www.lo-tech.co.uk/wiki/LTEMM.EXE				*
 ;*									*
@@ -18,8 +18,8 @@
 ;*	Original source kindly provided subject to the BSD 3-Clause	*
 ;*	License: http://opensource.org/licenses/BSD-3-Clause		*
 ;*									*
-;*	This software, as modified, is provided subject to the terms 	*
-;*	of use at: 							*
+;*	This software, as modified, is provided subject to the terms	*
+;*	of use at:							*
 ;*									*
 ;*	http://www.lo-tech.co.uk/wiki/lo-tech.co.uk:General_disclaimer	*
 ;*									*
@@ -76,7 +76,7 @@ alloc_page_count LABEL	BYTE
 ;
 ;	allocate page count buffer pointers (handle)
 ;
-handle_flag	equ     $+1
+handle_flag	equ	$+1
 		dw	HANDLE_CNT DUP(0)
 ;
 ;	mapping data backup buffer pointers (handle)
@@ -94,10 +94,10 @@ page_address	LABEL	WORD
 backup_map	LABEL	WORD
 		db	SIZE phys_page_struct * PHYS_PAGES * BACK_MAX DUP(-1)
 ;
-;       backup area status flags
+;	backup area status flags
 ;
-backup_flags    LABEL   BYTE
-                db      BACK_MAX DUP(0)
+backup_flags	LABEL	BYTE
+		db	BACK_MAX DUP(0)
 ;
 ;	allocate data area
 ;
@@ -165,7 +165,7 @@ cmderr:
 		MOV	AL,3		;Set unknown command error #.
 err_exit:				;
 		MOV	AH,10000001B	;Set error and done bits.
-		JMP	short exit1 	;Quick way out.
+		JMP	short exit1	;Quick way out.
 ;
 ;	EMM driver install check routine
 ;
@@ -199,7 +199,7 @@ int67		PROC	FAR
 
 		CMP	AH,40H			; function code check
 		JC	err84			; FUNCTION 1 - 30 ?
-f_max           equ     $+2
+f_max		equ	$+2
 		CMP	AH,5EH
 		JNC	err84
 		PUSH	BX
@@ -467,7 +467,7 @@ set_pages_map	PROC	NEAR
 set_pages_map2:
 		MOV	DX,CS:[DI].phys_page_port
 		MOV	AL,CS:[DI].log_page_data
-		OUT	DX,AL                   ;mapping physical pages...
+		OUT	DX,AL			;mapping physical pages...
 		ADD	DI,SIZE phys_page_struct
 		LOOP	set_pages_map2
 		POP	DI DX CX AX
@@ -528,7 +528,7 @@ check_map_data	ENDP
 ; output
 ;	AH	: status
 ;--------------------------------------------------------------------
-;               Same as noerr
+;		Same as noerr
 ;------ function 2 --------------------------------------------------
 ; Get page frame address
 ; output
@@ -590,8 +590,8 @@ f45:
 		LOOP	f45
 		JMP	err85			;error exit
 f44:
-                MOV     DX,SI
-                SHR     DX,1
+		MOV	DX,SI
+		SHR	DX,1
 		MOV	byte ptr [SI].handle_flag,1;handle active flag set
 		INC	handle_count		;used EMM handle count up
 		SUB	un_alloc_pages,BX	;unallocated page - BX
@@ -604,7 +604,7 @@ f44:
 		MOV	SI,OFFSET log_page
 		XOR	AX,AX
 		MOV	CX,BX
-                jcxz    f48
+		jcxz	f48
 		jmp	short f47
 f4a:
 		ADD	SI,LOG_SIZE
@@ -656,7 +656,7 @@ func5:						;v0.6....
 		SHL	BX,1
 		ADD	BX,[SI].page_address
 		MOV	AX,[BX]
-;               OR      AL,80h
+;		OR	AL,80h
 f58:
 		CMP	DX,[DI]			;same handle ?
 		JNZ	f54
@@ -701,11 +701,11 @@ func6:
 		CMP	[BX].back_address,0	;backup used?
 		JNZ	f63
 		MOV	cl,[BX].alloc_page_count
-                xor     ch,ch
+		xor	ch,ch
 		JCXZ	f6c			;page = 0 ?
 		add	un_alloc_pages,cx	;add unallocated pages
 		MOV	DI,[BX].page_address	;deallocate logical page...
-                mov     si,di
+		mov	si,di
 		PUSH	BX
 f65:
 		MOV	BX,[si]
@@ -721,7 +721,7 @@ f65:
 		REPZ	MOVSW
 f62:
 		MOV	cl,[BX].alloc_page_count
-                xor     ch,ch
+		xor	ch,ch
 		JCXZ	f68
 		MOV	AX,UNALLOC
 		REPZ	STOSW
@@ -729,7 +729,7 @@ f68:
 		XOR	DI,DI			;change page address....
 		MOV	SI,[BX].page_address	;get page address.
 		MOV	al,[BX].alloc_page_count;get allocated page count.
-                xor     ah,ah
+		xor	ah,ah
 		SHL	AX,1
 		MOV	CX,handle_count
 		JMP	short f66
@@ -759,8 +759,8 @@ f6c:
 		MOV	word ptr [BX].alloc_page_count,0
 		MOV	[BX].page_address,0	;clear handle page pointer
 		MOV	[BX].back_address,0	;clear handle back pointer
-                cmp     byte ptr f7_ver,32h
-                je      f6e
+		cmp	byte ptr f7_ver,32h
+		je	f6e
 		MOV	DI,OFFSET handle_name	;clear handle name data...
 		MOV	AX,DX
 		MOV	CL,3
@@ -786,8 +786,8 @@ f6d:
 ;--------------------------------------------------------------------
 func7:
 		STI
-f7_ver          equ     $+1
-		MOV	AL,40h  		;get version no.
+f7_ver		equ	$+1
+		MOV	AL,40h			;get version no.
 		JMP	noerr
 
 ;------ function 8 --------------------------------------------------
@@ -815,18 +815,18 @@ f84:
 		JMP	err8c			;error exit
 f83:
 		MOV	DI,offset backup_flags	;copy mapping data -> [DI]
-                mov     cx,BACK_MAX             ;v1.01
-                xor     al,al
-                repnz   scasb                   ;Search for free region
-                jnz     f84
-                dec     di
-                mov     byte ptr [di],1         ;Set busy flag
-                sub     di,offset backup_flags
-                mov     ax,di
-                mov     cl,CONTEXT_SIZE
-                mul     cl
-                add     ax,offset backup_map
-                mov     di,ax
+		mov	cx,BACK_MAX		;v1.01
+		xor	al,al
+		repnz	scasb			;Search for free region
+		jnz	f84
+		dec	di
+		mov	byte ptr [di],1		;Set busy flag
+		sub	di,offset backup_flags
+		mov	ax,di
+		mov	cl,CONTEXT_SIZE
+		mul	cl
+		add	ax,offset backup_map
+		mov	di,ax
 		MOV	[SI].back_address,DI
 		MOV	SI,OFFSET map_table
 		MOV	CX,CONTEXT_SIZE/2
@@ -856,7 +856,7 @@ func9:
 		JNZ	f81
 		CMP	[BX].back_address,0	;backup ?
 		JZ	f92
-		MOV	CX,CONTEXT_SIZE/2 	;move mapping data...
+		MOV	CX,CONTEXT_SIZE/2	;move mapping data...
 		MOV	SI,[BX].back_address
 		MOV	DI,OFFSET map_table
 		PUSH	DI
@@ -865,12 +865,12 @@ func9:
 		CALL	set_pages_map		;enable physical pages...
 		DEC	backup_count		;backup mapping count DEC
 		MOV	ax,[BX].back_address	;v1.01
-                sub     ax,offset backup_map
-                mov     cl,CONTEXT_SIZE
-                div     cl
-                add     ax,offset backup_flags
-                mov     di,ax
-                mov     byte ptr [di],0         ;Set free flag
+		sub	ax,offset backup_map
+		mov	cl,CONTEXT_SIZE
+		div	cl
+		add	ax,offset backup_flags
+		mov	di,ax
+		mov	byte ptr [di],0		;Set free flag
 		MOV	[BX].back_address,0
 		JMP	noerr			;exit
 f92:
@@ -884,7 +884,7 @@ f92:
 ;	AH	: status
 ;	AL	: board count
 ;--------------------------------------------------------------------
-;       Not supported on 4.0 : err84
+;	Not supported on 4.0 : err84
 ;------ function 11 -------------------------------------------------
 ; Get logical-to-physical page translation array
 ; input
@@ -894,7 +894,7 @@ f92:
 ;	AH	: status code
 ;	BX	: number of pages allocated EMM handle.
 ;--------------------------------------------------------------------
-;       Not supported on 4.0 : err84
+;	Not supported on 4.0 : err84
 ;------ function 12 -------------------------------------------------
 ; Get EMM handle count
 ; output
@@ -925,7 +925,7 @@ func13:						;v0.6....
 		CMP	byte ptr [SI].handle_flag,1;handle OK ?
 		jne	f131
 		MOV	bl,[SI].alloc_page_count
-                xor     bh,bh
+		xor	bh,bh
 		jmp	f121			;exit
 f131:
 		JMP	err83			;error exit
@@ -949,7 +949,7 @@ f142:
 		MOV	AX,DX
 		STOSW
 		MOV	al,[SI].alloc_page_count;v0.5
-                xor     ah,ah
+		xor	ah,ah
 		STOSW
 		INC	BX
 f141:
@@ -967,7 +967,7 @@ f141:
 ;	AH	: status
 ;--------------------------------------------------------------------
 func15:
-                cbw
+		cbw
 		dec	ax
 		js	get_page_map		; 0
 		jz	set_page_map		; 1
@@ -1012,7 +1012,7 @@ set_page_map3:
 		MOV	AX,ES
 		MOV	DS,AX
 		MOV	SI,DI
-                push    cs
+		push	cs
 		pop	es
 		MOV	DI,OFFSET map_table
 		MOV	CX,CONTEXT_SIZE/2
@@ -1057,13 +1057,13 @@ get_size_page_map:
 		MOV	AL,CONTEXT_SIZE		;map data size set.
 		JMP	noerr
 ;
-;       This is end of EMS 3 function set
+;	This is end of EMS 3 function set
 ;
 ;------ function 16 -------------------------------------------------
 ; Get/set partial page map
 ;--------------------------------------------------------------------
 func16:
-                cbw
+		cbw
 		dec	ax
 		js	get_partial_map		; 0
 		jz	set_partial_map		; 1
@@ -1282,7 +1282,7 @@ func18:
 		CMP	total_pages,BX		;request total size over ?
 		JC	f182			;yes
 		MOV	al,[SI].alloc_page_count;get page size to handle
-                xor     ah,ah
+		xor	ah,ah
 		OR	BX,BX			;reallocate count = 0?
 		JNZ	f184
 		MOV	CX,AX
@@ -1334,7 +1334,7 @@ f18l:
 		SHL	AX,1
 		ADD	DI,AX
 		MOV	al,[SI].alloc_page_count
-                xor     ah,ah
+		xor	ah,ah
 		MOV	SI,[SI].page_address
 		SHL	AX,1
 		ADD	SI,AX
@@ -1351,7 +1351,7 @@ f18e:
 f18f:
 		POP	SI
 		MOV	al,[SI].alloc_page_count
-                xor     ah,ah
+		xor	ah,ah
 		MOV	[SI].alloc_page_count,bl;set EMM handle used page count
 		XOR	DI,DI			;change other handle page add-
 		SUB	AX,BX			;ress....
@@ -1377,7 +1377,7 @@ f18o:
 		JMP	noerr			;exit.
 f187:
 		MOV	al,[SI].alloc_page_count
-                xor     ah,ah
+		xor	ah,ah
 		MOV	[BP].bx_save,AX
 		JMP	err88			;error exit
 f186:
@@ -1397,7 +1397,7 @@ f18p:
 		SHL	AX,1
 		ADD	DI,AX
 		MOV	al,[SI].alloc_page_count
-                xor     ah,ah
+		xor	ah,ah
 		SHL	AX,1
 		ADD	AX,[SI].page_address
 		PUSH	CX
@@ -1417,7 +1417,7 @@ f18q:
 		CLD
 		MOV	DI,[SI].page_address	;allocate add pages...
 		MOV	al,[SI].alloc_page_count
-                xor     ah,ah
+		xor	ah,ah
 		MOV	CX,BX
 		SUB	CX,AX
 		SHL	AX,1
@@ -1440,7 +1440,7 @@ f188:
 		LOOP	f189
 		POP	SI
 		MOV	al,[SI].alloc_page_count
-                xor     ah,ah
+		xor	ah,ah
 		MOV	[SI].alloc_page_count,bl;set EMM handle used page count
 		XOR	DI,DI			;change other handle page add-
 		XCHG	AX,BX			;ress....
@@ -1468,7 +1468,7 @@ f18d:
 ;--------------------------------------------------------------------
 func19:
 		sti
-                cbw
+		cbw
 		dec	ax
 		js	get_handle_attr		; 0
 		jz	set_handle_attr		; 1
@@ -1557,11 +1557,11 @@ set_handle_name:
 		mov	di,offset handle_name
 		mov	bx,offset handle_flag
 set_handle_name2:
-		cmp	byte ptr [bx],0         ;active handle ?
+		cmp	byte ptr [bx],0		;active handle ?
 		je	set_handle_name3
 		push	cx si
 		mov	cx,HANDLE_NAME_SIZE/2
-		repz	cmpsw                   ;compare handle name...
+		repz	cmpsw			;compare handle name...
 		pop	si cx
 		je	set_handle_name4	;found same handle name ?
 set_handle_name3:
@@ -1637,7 +1637,7 @@ search_for_name1:
 		repz	cmpsw
 		POP	di SI CX
 		JZ	search_for_name2
-                add     di,HANDLE_NAME_SIZE
+		add	di,HANDLE_NAME_SIZE
 		inc	dx
 		loop	search_for_name1
 		jmp	erra0
@@ -1917,445 +1917,445 @@ f2351:
 ; This subfunction copies a region of memory in the following memory
 ; source/destination combinations:
 ;
-;          o   conventional memory to conventional memory
-;          o   conventional memory to expanded memory
-;          o   expanded memory to conventional memory
-;          o   expanded memory to expanded memory
+;	   o   conventional memory to conventional memory
+;	   o   conventional memory to expanded memory
+;	   o   expanded memory to conventional memory
+;	   o   expanded memory to expanded memory
 ;
-;       AL      : Operation (0)
-;       DS:SI   : pointer to move_info
-;       AH      : Return code
+;	AL	: Operation (0)
+;	DS:SI	: pointer to move_info
+;	AH	: Return code
 ;--------------------------------------------------------------------
 func24:
-                or      al,al
-                je      f2400
-                cmp     al,1
-                je      f2400
-                jmp     err84                   ;
+		or	al,al
+		je	f2400
+		cmp	al,1
+		je	f2400
+		jmp	err84			;
 f2400:
-                mov     [bp].f24_al_save,al
-                mov     ax,[bp].ds_save
-                mov     ds,ax
-                mov     ax,[si].source_offset   ;
-                mov     [bp].source_off,ax
-                mov     al,[si].source_type
-                mov     [bp].source_type1,al
-                or      al,al
-                je      f2401
-                mov     ax,[si].source_seg_page ; = EMS
-                mov     [bp].source_page,ax
-                mov     ax,cs:Page_Frame_Seg
-                mov     [bp].source_seg,ax
-                mov     ax,[si].source_handle1
-                mov     [bp].source_handle2,ax
-                jmp     short f2402
+		mov	[bp].f24_al_save,al
+		mov	ax,[bp].ds_save
+		mov	ds,ax
+		mov	ax,[si].source_offset	;
+		mov	[bp].source_off,ax
+		mov	al,[si].source_type
+		mov	[bp].source_type1,al
+		or	al,al
+		je	f2401
+		mov	ax,[si].source_seg_page ; = EMS
+		mov	[bp].source_page,ax
+		mov	ax,cs:Page_Frame_Seg
+		mov	[bp].source_seg,ax
+		mov	ax,[si].source_handle1
+		mov	[bp].source_handle2,ax
+		jmp	short f2402
 f2401:
-                mov     ax,[si].source_seg_page ; = RAM
-                mov     [bp].source_seg,ax
+		mov	ax,[si].source_seg_page ; = RAM
+		mov	[bp].source_seg,ax
 f2402:
-                mov     ax,[si].dest_offset     ;
-                mov     [bp].dest_off,ax
-                mov     al,[si].dest_type
-                mov     [bp].dest_type1,al
-                or      al,al
-                je      f2403
-                mov     ax,[si].dest_seg_page   ; = EMS
-                mov     [bp].dest_page,ax
-                mov     ax,cs:Page_Frame_Seg
-                add     ax,400H
-                mov     [bp].dest_seg,ax
-                mov     ax,[si].dest_handle1
-                mov     [bp].dest_handle2,ax
-                jmp     short f2404
+		mov	ax,[si].dest_offset	;
+		mov	[bp].dest_off,ax
+		mov	al,[si].dest_type
+		mov	[bp].dest_type1,al
+		or	al,al
+		je	f2403
+		mov	ax,[si].dest_seg_page	; = EMS
+		mov	[bp].dest_page,ax
+		mov	ax,cs:Page_Frame_Seg
+		add	ax,400H
+		mov	[bp].dest_seg,ax
+		mov	ax,[si].dest_handle1
+		mov	[bp].dest_handle2,ax
+		jmp	short f2404
 f2403:
-                mov     ax,[si].dest_seg_page   ; = RAM
-                mov     [bp].dest_seg,ax
+		mov	ax,[si].dest_seg_page	; = RAM
+		mov	[bp].dest_seg,ax
 f2404:
-                les     di,[si].region_lenght   ;
-                mov     [bp].region_low,di
-                mov     ax,es
-                mov     [bp].region_high,ax
-                cmp     ax,10h                  ;
-                jb      f2405
-                jne     f2407
-                or      di,di
-                jnz     f2407
+		les	di,[si].region_lenght	;
+		mov	[bp].region_low,di
+		mov	ax,es
+		mov	[bp].region_high,ax
+		cmp	ax,10h			;
+		jb	f2405
+		jne	f2407
+		or	di,di
+		jnz	f2407
 
 f2405:
-                cmp     [si].source_type,0
-                jne     f2408                   ; = RAM
-                FarPtrAddress [bp].source_seg,[bp].source_off
-                cmp     dx,10h                  ;...
-                jnb     f2411
+		cmp	[si].source_type,0
+		jne	f2408			; = RAM
+		FarPtrAddress [bp].source_seg,[bp].source_off
+		cmp	dx,10h			;...
+		jnb	f2411
 f2409:
-                Save32  [bp].source_ea_high,[bp].source_ea_low;
-                Add32   [bp].region_high,[bp].region_low
-                Sub32   0,1                     ;
-                cmp     dx,10h                  ;
-                jb      f2410
-                jg      f2411
-                or      ax,ax
-                jz      f2410
+		Save32	[bp].source_ea_high,[bp].source_ea_low;
+		Add32	[bp].region_high,[bp].region_low
+		Sub32	0,1			;
+		cmp	dx,10h			;
+		jb	f2410
+		jg	f2411
+		or	ax,ax
+		jz	f2410
 f2411:
-                jmp     errA2
+		jmp	errA2
 f2413:
-                jmp     err8A
+		jmp	err8A
 f2414:
-                jmp     err95
+		jmp	err95
 f2410a:
-                jmp     err93
+		jmp	err93
 f2412:
-                jmp     err83
+		jmp	err83
 f2407:
-                jmp     err96
+		jmp	err96
 f2418:
-                jmp     errA2
+		jmp	errA2
 f2408:
-                mov     dx,[bp].source_handle2  ; = EMS
-                call    check_handle            ;
-                jc      f2412
-                mov     bx,[bp].source_page
-                call    check_log_page          ;
-                jc      f2413
-                mov     di,dx
-                mov     ax,[bp].source_off
-                cmp     ax,4000h
-                jnb     f2414
-                xor     dx,dx
-                Add32   [bp].region_high,[bp].region_low
-                Sub32   0,1
-                Shl32   2
-                add     bx,dx
-                mov     dx,di
-                call    check_log_page          ;
-                jc      f2410a
+		mov	dx,[bp].source_handle2	; = EMS
+		call	check_handle		;
+		jc	f2412
+		mov	bx,[bp].source_page
+		call	check_log_page		;
+		jc	f2413
+		mov	di,dx
+		mov	ax,[bp].source_off
+		cmp	ax,4000h
+		jnb	f2414
+		xor	dx,dx
+		Add32	[bp].region_high,[bp].region_low
+		Sub32	0,1
+		Shl32	2
+		add	bx,dx
+		mov	dx,di
+		call	check_log_page		;
+		jc	f2410a
 f2410:
-                cmp     [si].dest_type,0
-                jne     f2415                   ; = RAM
-                FarPtrAddress [bp].dest_seg,[bp].dest_off
-                cmp     dx,10h                  ;.
-                jnb     f2418
-                Save32  [bp].dest_ea_high, [bp].dest_ea_low
-                Add32   [bp].region_high,[bp].region_low
-                Sub32   0,1                     ;
-                cmp     dx,10h                  ;
-                jb      f2417
-                jmp     short f2418
+		cmp	[si].dest_type,0
+		jne	f2415			; = RAM
+		FarPtrAddress [bp].dest_seg,[bp].dest_off
+		cmp	dx,10h			;.
+		jnb	f2418
+		Save32	[bp].dest_ea_high, [bp].dest_ea_low
+		Add32	[bp].region_high,[bp].region_low
+		Sub32	0,1			;
+		cmp	dx,10h			;
+		jb	f2417
+		jmp	short f2418
 f2419:
-                jmp     err83
+		jmp	err83
 f2420:
-                jmp     err8A
+		jmp	err8A
 f2421:
-                jmp     err95                   ;
+		jmp	err95			;
 f2417a:
-                jmp     err93                   ;
+		jmp	err93			;
 f2415:
-                mov     dx,[bp].dest_handle2    ; = EMS
-                call    check_handle            ;
-                jc      f2419
-                mov     bx,[bp].dest_page
-                call    check_log_page          ;
-                jc      f2420
-                mov     di,dx
-                mov     ax,[bp].dest_off
-                cmp     ax,4000h
-                jnb     f2421
-                xor     dx,dx
-                Add32   [bp].region_high, [bp].region_low
-                Sub32   0,1
-                Shl32   2
-                add     bx,dx
-                mov     dx,di
-                call    check_log_page          ;
-                jc      f2417a
+		mov	dx,[bp].dest_handle2	; = EMS
+		call	check_handle		;
+		jc	f2419
+		mov	bx,[bp].dest_page
+		call	check_log_page		;
+		jc	f2420
+		mov	di,dx
+		mov	ax,[bp].dest_off
+		cmp	ax,4000h
+		jnb	f2421
+		xor	dx,dx
+		Add32	[bp].region_high, [bp].region_low
+		Sub32	0,1
+		Shl32	2
+		add	bx,dx
+		mov	dx,di
+		call	check_log_page		;
+		jc	f2417a
 
 f2417:
-                mov     [bp].direct_move,0
-                mov     al,[si].source_type
-                cmp     al,[si].dest_type       ;
-                jne     f2423
+		mov	[bp].direct_move,0
+		mov	al,[si].source_type
+		cmp	al,[si].dest_type	;
+		jne	f2423
 f2422:
-                cmp     al,1
-                je      f2424
-                FLoad32 [bp].source_ea_low
-                mov     bx,[bp].dest_ea_low     ; = RAM
-                mov     cx,[bp].dest_ea_high
-                jmp     short f2430
+		cmp	al,1
+		je	f2424
+		FLoad32 [bp].source_ea_low
+		mov	bx,[bp].dest_ea_low	; = RAM
+		mov	cx,[bp].dest_ea_high
+		jmp	short f2430
 f2424:
-                mov     ax,[bp].source_handle2  ; = EMS
-                cmp     ax,[bp].dest_handle2
-                jne     f2423
-                mov     dx,[bp].dest_page
-                xor     ax,ax
-                Shr32   2
-                Add32   0,[bp].dest_off
-                mov     bx,ax
-                mov     cx,dx
-                mov     dx,[bp].source_page
-                xor     ax,ax
-                Shr32   2
-                Add32   0,[bp].source_off
+		mov	ax,[bp].source_handle2	; = EMS
+		cmp	ax,[bp].dest_handle2
+		jne	f2423
+		mov	dx,[bp].dest_page
+		xor	ax,ax
+		Shr32	2
+		Add32	0,[bp].dest_off
+		mov	bx,ax
+		mov	cx,dx
+		mov	dx,[bp].source_page
+		xor	ax,ax
+		Shr32	2
+		Add32	0,[bp].source_off
 f2430:
-                cmp     dx,cx                   ;DX:AX = , CX:BX =
-                jne     f2425
-                cmp     ax,bx
+		cmp	dx,cx			;DX:AX = , CX:BX =
+		jne	f2425
+		cmp	ax,bx
 f2425:
-                jae     f2426
-                xchg    bx,ax
-                xchg    cx,dx
-                cmp     [bp].f24_al_save,1
-                je      f2426
-                or      [bp].direct_move,1      ;
+		jae	f2426
+		xchg	bx,ax
+		xchg	cx,dx
+		cmp	[bp].f24_al_save,1
+		je	f2426
+		or	[bp].direct_move,1	;
 f2426:
-                sub     ax,bx
-                sbb     dx,cx
-                cmp     dx,[bp].region_high
-                jne     f2427
-                cmp     ax,[bp].region_low
+		sub	ax,bx
+		sbb	dx,cx
+		cmp	dx,[bp].region_high
+		jne	f2427
+		cmp	ax,[bp].region_low
 f2427:
-                jae     f2423
-                cmp     [bp].f24_al_save,1
-                je      f2428                   ;
-                or      [bp].direct_move,2      ;
+		jae	f2423
+		cmp	[bp].f24_al_save,1
+		je	f2428			;
+		or	[bp].direct_move,2	;
 f2423:
-                mov     [bp].zero_low,0
-                test    [bp].direct_move,1
-                jnz     f2429
-                cld
-                jmp     f2435
+		mov	[bp].zero_low,0
+		test	[bp].direct_move,1
+		jnz	f2429
+		cld
+		jmp	f2435
 f2428:
-                jmp     err97
+		jmp	err97
 
 f2429:
-                std
-                cmp     [si].dest_type,1        ; = EMS ?
-                je      f2432
+		std
+		cmp	[si].dest_type,1	; = EMS ?
+		je	f2432
 
-                FLoad32 [bp].dest_ea_low
-                Add32   [bp].region_high,[bp].region_low
-                Sub32   0,1
-                mov     bx,ax
-                and     bx,000Fh
-                mov     [bp].dest_off,bx
-                Shr32   4
-                mov     [bp].dest_seg,ax
-                jmp     short f2433
-f2432:                                          ; EMS...
-                FLoad32 [bp].region_low
-                Add32   0,[bp].dest_off
-                Sub32   0,1
-                mov     bx,ax
-                and     bx,3FFFh
-                mov     [bp].dest_off,bx
-                Shl32   2
-                mov     bx,[bp].dest_page
-                add     bx,dx
-                mov     [bp].dest_page,bx
-                mov     dx,[bp].dest_handle2
-                call    check_log_page
-                mov     bx,ax
-                mov     al,1
-                call    set_phys_page
+		FLoad32 [bp].dest_ea_low
+		Add32	[bp].region_high,[bp].region_low
+		Sub32	0,1
+		mov	bx,ax
+		and	bx,000Fh
+		mov	[bp].dest_off,bx
+		Shr32	4
+		mov	[bp].dest_seg,ax
+		jmp	short f2433
+f2432:						; EMS...
+		FLoad32 [bp].region_low
+		Add32	0,[bp].dest_off
+		Sub32	0,1
+		mov	bx,ax
+		and	bx,3FFFh
+		mov	[bp].dest_off,bx
+		Shl32	2
+		mov	bx,[bp].dest_page
+		add	bx,dx
+		mov	[bp].dest_page,bx
+		mov	dx,[bp].dest_handle2
+		call	check_log_page
+		mov	bx,ax
+		mov	al,1
+		call	set_phys_page
 f2433:
-                cmp     [si].source_type,1      ; = EMS ?
-                je      f2434
-                                                ;...
-                FLoad32 [bp].source_ea_low
-                Add32   [bp].region_high,[bp].region_low
-                Sub32   0,1
-                mov     bx,ax
-                and     bx,000Fh
-                mov     [bp].source_off,bx
-                Shr32   4
-                mov     [bp].source_seg,ax
-                jmp     short f2435
-f2434:                                          ; EMS...
-                FLoad32 [bp].region_low
-                Add32   0,[bp].source_off
-                Sub32   0,1
-                mov     bx,ax
-                and     bx,3FFFh
-                mov     [bp].source_off,bx
-                Shl32   2
-                add     [bp].source_page,dx
-                mov     dx,[bp].source_handle2
-                call    check_log_page
-                mov     bx,ax
-                xor     al,al
-                call    set_phys_page
+		cmp	[si].source_type,1	; = EMS ?
+		je	f2434
+						;...
+		FLoad32 [bp].source_ea_low
+		Add32	[bp].region_high,[bp].region_low
+		Sub32	0,1
+		mov	bx,ax
+		and	bx,000Fh
+		mov	[bp].source_off,bx
+		Shr32	4
+		mov	[bp].source_seg,ax
+		jmp	short f2435
+f2434:						; EMS...
+		FLoad32 [bp].region_low
+		Add32	0,[bp].source_off
+		Sub32	0,1
+		mov	bx,ax
+		and	bx,3FFFh
+		mov	[bp].source_off,bx
+		Shl32	2
+		add	[bp].source_page,dx
+		mov	dx,[bp].source_handle2
+		call	check_log_page
+		mov	bx,ax
+		xor	al,al
+		call	set_phys_page
 
 
 f2435:
-                mov     al,[si].source_type     ;
-                or      al,[si].dest_type       ;
-                jz      f2436
-                mov     cx,SIZE phys_page_struct
-                mov     si,offset map_table
-                mov     di,offset f24_data
-                mov     ax,cs
-                mov     ds,ax
-                mov     es,ax
-                rep     movsw
-                or      [bp].direct_move,4
+		mov	al,[si].source_type	;
+		or	al,[si].dest_type	;
+		jz	f2436
+		mov	cx,SIZE phys_page_struct
+		mov	si,offset map_table
+		mov	di,offset f24_data
+		mov	ax,cs
+		mov	ds,ax
+		mov	es,ax
+		rep	movsw
+		or	[bp].direct_move,4
 
 f2436:
-                mov     ax,[bp].region_low
-                or      ax,[bp].region_high
-                jnz     f2438
-                test    [bp].direct_move,4      ;
-                jz      f2439
-                mov     cx,SIZE phys_page_struct
-                mov     si,offset f24_data
-                mov     di,offset map_table
+		mov	ax,[bp].region_low
+		or	ax,[bp].region_high
+		jnz	f2438
+		test	[bp].direct_move,4	;
+		jz	f2439
+		mov	cx,SIZE phys_page_struct
+		mov	si,offset f24_data
+		mov	di,offset map_table
 f2440:
-                mov     ax,cs
-                mov     ds,ax
-                mov     es,ax
-                rep     movsw
-                call    set_pages_map
+		mov	ax,cs
+		mov	ds,ax
+		mov	es,ax
+		rep	movsw
+		call	set_pages_map
 f2439:
-                test    [bp].direct_move,2      ; F24 !!!
-                jnz     f2441
-                jmp     noerr
+		test	[bp].direct_move,2	; F24 !!!
+		jnz	f2441
+		jmp	noerr
 f2441:
-                jmp     err92
+		jmp	err92
 
 
 f2438:
-                cmp     [bp].source_type1,1
-                je      f2442
+		cmp	[bp].source_type1,1
+		je	f2442
 
-                FarPtrAddress [bp].source_seg,[bp].source_off
-                test    [bp].direct_move,1
-                jnz     f2443
-                Add32   [bp].zero_low,0         ;
-                mov     bx,ax
-                and     bx,000Fh
-                mov     [bp].source_off,bx
-                Shr32   4
-                mov     [bp].source_seg,ax
-                jmp     short f2444
+		FarPtrAddress [bp].source_seg,[bp].source_off
+		test	[bp].direct_move,1
+		jnz	f2443
+		Add32	[bp].zero_low,0		;
+		mov	bx,ax
+		and	bx,000Fh
+		mov	[bp].source_off,bx
+		Shr32	4
+		mov	[bp].source_seg,ax
+		jmp	short f2444
 f2443:
-                Sub32   0,[bp].zero_low         ;
-                mov     bx,ax
-                or      bx,0FFF0h
-                mov     [bp].source_off,bx
-                Sub32   0,bx
-                Shr32   4
-                mov     [bp].source_seg,ax
-                jmp     short f2444
+		Sub32	0,[bp].zero_low		;
+		mov	bx,ax
+		or	bx,0FFF0h
+		mov	[bp].source_off,bx
+		Sub32	0,bx
+		Shr32	4
+		mov	[bp].source_seg,ax
+		jmp	short f2444
 f2442:
-                mov     ax,[bp].source_off      ; EMS...
-                test    [bp].direct_move,1
-                jnz     f2445
-                add     ax,[bp].zero_low        ;...
-                cmp     ax,4000h
-                jb      f2446
-                inc     [bp].source_page
-                mov     [bp].source_off,0
-                jmp     short f2446
+		mov	ax,[bp].source_off	; EMS...
+		test	[bp].direct_move,1
+		jnz	f2445
+		add	ax,[bp].zero_low	;...
+		cmp	ax,4000h
+		jb	f2446
+		inc	[bp].source_page
+		mov	[bp].source_off,0
+		jmp	short f2446
 f2445:
-                sub     ax,[bp].zero_low        ;...
-                jnc     f2446
-                dec     [bp].source_page
-                mov     [bp].source_off,3FFFh
+		sub	ax,[bp].zero_low	;...
+		jnc	f2446
+		dec	[bp].source_page
+		mov	[bp].source_off,3FFFh
 f2446:
-                mov     dx,[bp].source_handle2
-                mov     bx,[bp].source_page
-                call    check_log_page
-                mov     bx,ax
-                xor     al,al
-                call    set_phys_page
+		mov	dx,[bp].source_handle2
+		mov	bx,[bp].source_page
+		call	check_log_page
+		mov	bx,ax
+		xor	al,al
+		call	set_phys_page
 
 
 f2444:
-                test    [bp].dest_type1,1
-                jnz     f2447
+		test	[bp].dest_type1,1
+		jnz	f2447
 
-                FarPtrAddress [bp].dest_seg,[bp].dest_off
-                test    [bp].direct_move,1
-                jnz     f2448
-                Add32   0,[bp].zero_low         ;
-                mov     bx,ax
-                and     bx,000Fh
-                mov     [bp].dest_off,bx
-                Shr32   4
-                mov     [bp].dest_seg,ax
-                jmp     short f2449
+		FarPtrAddress [bp].dest_seg,[bp].dest_off
+		test	[bp].direct_move,1
+		jnz	f2448
+		Add32	0,[bp].zero_low		;
+		mov	bx,ax
+		and	bx,000Fh
+		mov	[bp].dest_off,bx
+		Shr32	4
+		mov	[bp].dest_seg,ax
+		jmp	short f2449
 f2448:
-                Sub32   0,[bp].zero_low         ;...
-                mov     bx,ax
-                or      bx,0FFF0h
-                mov     [bp].dest_off,bx
-                Sub32   0,bx
-                Shr32   4
-                mov     [bp].dest_seg,ax
-                jmp     short f2449
+		Sub32	0,[bp].zero_low		;...
+		mov	bx,ax
+		or	bx,0FFF0h
+		mov	[bp].dest_off,bx
+		Sub32	0,bx
+		Shr32	4
+		mov	[bp].dest_seg,ax
+		jmp	short f2449
 f2447:
-                mov     ax,[bp].dest_off        ; EMS...
-                test    [bp].direct_move,1
-                jnz     f2450
-                add     ax,[bp].zero_low        ;...
-                cmp     ax,4000h
-                jb      f2451
-                inc     [bp].dest_page
-                mov     [bp].dest_off,0
-                jmp     short f2451
+		mov	ax,[bp].dest_off	; EMS...
+		test	[bp].direct_move,1
+		jnz	f2450
+		add	ax,[bp].zero_low	;...
+		cmp	ax,4000h
+		jb	f2451
+		inc	[bp].dest_page
+		mov	[bp].dest_off,0
+		jmp	short f2451
 f2450:
-                sub     ax,[bp].zero_low        ;...
-                jnc     f2451
-                dec     [bp].dest_page
-                mov     [bp].dest_off,3FFFh
+		sub	ax,[bp].zero_low	;...
+		jnc	f2451
+		dec	[bp].dest_page
+		mov	[bp].dest_off,3FFFh
 f2451:
-                mov     dx,[bp].dest_handle2
-                mov     bx,[bp].dest_page
-                call    check_log_page
-                mov     bx,ax
-                mov     al,1
-                call    set_phys_page
+		mov	dx,[bp].dest_handle2
+		mov	bx,[bp].dest_page
+		call	check_log_page
+		mov	bx,ax
+		mov	al,1
+		call	set_phys_page
 f2449:
-                mov     bl,[bp].dest_type1     ;MAXLEN (dest)...
-                mov     ax,[bp].dest_off
-                call    maxlen
-                push    ax
-                mov     bl,[bp].source_type1   ;MAXLEN (source)...
-                mov     ax,[bp].source_off
-                call    maxlen
-                pop     bx
-                mov     cx,ax
-                FLoad32 [bp].region_low
-                cmp     cx,bx                  ;
-                jb      f2452
-                mov     cx,bx
+		mov	bl,[bp].dest_type1     ;MAXLEN (dest)...
+		mov	ax,[bp].dest_off
+		call	maxlen
+		push	ax
+		mov	bl,[bp].source_type1   ;MAXLEN (source)...
+		mov	ax,[bp].source_off
+		call	maxlen
+		pop	bx
+		mov	cx,ax
+		FLoad32 [bp].region_low
+		cmp	cx,bx		       ;
+		jb	f2452
+		mov	cx,bx
 f2452:
-                or      dx,dx
-                jnz     f2453
-                cmp     cx,ax
-                jb      f2453
-                mov     cx,ax
+		or	dx,dx
+		jnz	f2453
+		cmp	cx,ax
+		jb	f2453
+		mov	cx,ax
 
 
 f2453:
-                mov     [bp].zero_low,cx
-                mov     ax,[bp].source_seg
-                mov     ds,ax
-                mov     ax,[bp].dest_seg
-                mov     es,ax
-                mov     si,[bp].source_off
-                mov     di,[bp].dest_off
+		mov	[bp].zero_low,cx
+		mov	ax,[bp].source_seg
+		mov	ds,ax
+		mov	ax,[bp].dest_seg
+		mov	es,ax
+		mov	si,[bp].source_off
+		mov	di,[bp].dest_off
 
-                cmp     [bp].f24_al_save,1
-                je      f2454
-                rep     movsb                   ;
+		cmp	[bp].f24_al_save,1
+		je	f2454
+		rep	movsb			;
 f2455:
-                FLoad32 [bp].region_low
-                Sub32   0,[bp].zero_low
-                Save32  [bp].region_high,[bp].region_low
-                jmp     f2436
+		FLoad32 [bp].region_low
+		Sub32	0,[bp].zero_low
+		Save32	[bp].region_high,[bp].region_low
+		jmp	f2436
 f2454:
-                Exbyte                          ;...
-                loop    f2454
-                jmp     f2455
+		Exbyte				;...
+		loop	f2454
+		jmp	f2455
 ;------ function 25 -------------------------------------------------
 ; Get mappable physical address array
 ;--------------------------------------------------------------------
@@ -2451,7 +2451,7 @@ func28:
 		STI
 		CMP	OSE_flag,0		;OS/E flag enable?
 		jne	f280
-                cbw
+		cbw
 		dec	ax
 		js	get_alter_map_reg	; 0
 		JZ	set_alter_map_reg	; 1
@@ -2598,7 +2598,7 @@ set_alter_map_reg:
 		push	cs
 		pop	es
 		rep	movsw
-                call    set_pages_map
+		call	set_pages_map
 set_alter_map_reg2:
 		jmp	noerr
 set_alter_map_reg1:
@@ -2622,19 +2622,19 @@ f291:
 		call	set_pages_map
 		MOV	DI,OFFSET alloc_page_count;clear all...
 		mov	cx,HANDLE_CNT*3
-                xor     ax,ax
+		xor	ax,ax
 		rep	stosw
 		MOV	DI,OFFSET handle_name	;clear handles...
 		MOV	CX,HANDLE_CNT*4
 		REPZ	STOSW
 		MOV	di,OFFSET backup_flags	;v1.01
-                mov     cx,CONTEXT_SIZE/2
+		mov	cx,CONTEXT_SIZE/2
 		rep	stosw
 		MOV	DI,OFFSET alloc_page	;clear logical page buffer...
 		MOV	CX,PAGE_MAX*2
-		dec	ax                      ; set to -1
+		dec	ax			; set to -1
 		REPZ	STOSW
-		MOV	byte ptr handle_flag,1  ;set system handle flag...
+		MOV	byte ptr handle_flag,1	;set system handle flag...
 		MOV	handle_count,1		;set active handle count
 		MOV	backup_count,0		;set backup map count
 		MOV	AX,total_pages
@@ -2736,36 +2736,36 @@ return_access_key:
 ;--------------------------------------------------------------------
 ; \82\EB\E7\A8᫥\AD\A8\A5 \AC\A0\AAᨬ\A0\AB쭮 \A2\AE\A7\AC\AE\A6\AD\AE\A9 \A4\AB\A8\AD\EB \A1\AB\AE筮\A9 \AF\A5\E0\A5\E1뫪\A8
 ; \A2室
-;       BL      : ⨯ \AF\A0\AC\EF\E2\A8 (0=RAM,1=EMS)
-;       AX      : ᬥ饭\A8e \A1\AB\AE\AA\A0
+;	BL	: ⨯ \AF\A0\AC\EF\E2\A8 (0=RAM,1=EMS)
+;	AX	: ᬥ饭\A8e \A1\AB\AE\AA\A0
 ; \A2\EB室
-;       AX      : \A4\AB\A8\AD\A0 \AF\A5\E0\A5\E1뫪\A8
+;	AX	: \A4\AB\A8\AD\A0 \AF\A5\E0\A5\E1뫪\A8
 ;--------------------------------------------------------------------
-maxlen          PROC    NEAR
-                or      bl,bl
-                jnz     max1
-                test    [bp].direct_move,1      ;\A4\AB\EF ᮢ\AC\A5\E1⨬\AE\A9 \AF\A0\AC\EF\E2\A8...
-                jnz     max2
-                neg     ax
-                jmp     short max3
+maxlen		PROC	NEAR
+		or	bl,bl
+		jnz	max1
+		test	[bp].direct_move,1	;\A4\AB\EF ᮢ\AC\A5\E1⨬\AE\A9 \AF\A0\AC\EF\E2\A8...
+		jnz	max2
+		neg	ax
+		jmp	short max3
 max2:
-                inc     ax
+		inc	ax
 max3:
-                or      ax,ax
-                jnz     max4
-                dec     ax
-                ret
+		or	ax,ax
+		jnz	max4
+		dec	ax
+		ret
 max1:
-                test    [bp].direct_move,1      ;\A4\AB\EF EMS...
-                jnz     max5
-                sub     ax,4000h
-                neg     ax
-                ret
+		test	[bp].direct_move,1	;\A4\AB\EF EMS...
+		jnz	max5
+		sub	ax,4000h
+		neg	ax
+		ret
 max5:
-                inc     ax
+		inc	ax
 max4:
-                ret
-maxlen          ENDP
+		ret
+maxlen		ENDP
 
 ;--------------------------------------------------------------------
 ; Check logical page no.
@@ -2777,7 +2777,7 @@ maxlen          ENDP
 ;	CF = 0	: OK
 ;	CF = 1	: NG
 ;--------------------------------------------------------------------
-check_log_page 	PROC	NEAR
+check_log_page	PROC	NEAR
 		PUSH	CX SI
 		MOV	SI,DX
 		SHL	SI,1
@@ -2795,7 +2795,7 @@ check_log_page1:
 check_log_page2:
 		STC
 		JMP	short check_log_page1
-check_log_page 	ENDP
+check_log_page	ENDP
 ;--------------------------------------------------------------------
 ; Check EMM handle no.
 ; input
@@ -2804,7 +2804,7 @@ check_log_page 	ENDP
 ;	CF = 0	: OK
 ;	CF = 1	: NG
 ;--------------------------------------------------------------------
-check_handle 	PROC	NEAR
+check_handle	PROC	NEAR
 		PUSH	DI
 		CMP	DX,HANDLE_CNT
 		jnb	check_handle1
@@ -2818,8 +2818,8 @@ check_handle2:
 		RET
 check_handle1:
 		STC
-                jmp     check_handle2
-check_handle 	ENDP
+		jmp	check_handle2
+check_handle	ENDP
 ;--------------------------------------------------------------------
 ; Set physical page.
 ; input
@@ -2837,7 +2837,7 @@ set_phys_page	PROC	NEAR
 		PUSH	DX
 		MOV	DX,CS:[DI].phys_page_port
 		MOV	AX,BX
-; JJP           OR      AL,80h
+; JJP		OR	AL,80h
 		OUT	DX,AL
 		POP	DX
 		MOV	CS:[DI].emm_handle2,DX	;handle
@@ -2872,24 +2872,24 @@ change_seg_page1:
 change_seg_page	ENDP
 
 ;
-;               EMS 4.0 Data
+;		EMS 4.0 Data
 ;
-                ALIGN   2
+		ALIGN	2
 ;
 ;	handle name buffer
 ;
 handle_name	LABEL	BYTE
 		DB	HANDLE_NAME_SIZE * HANDLE_CNT DUP (0)
 ;
-;       f24 Save area
+;	f24 Save area
 ;
-f24_data        DB      SIZE phys_page_struct * 2 dup (0)
+f24_data	DB	SIZE phys_page_struct * 2 dup (0)
 ;
 ;--------------------------------------------------------------------
 ; EMM driver initilize program
 ;--------------------------------------------------------------------
 emminit:
-		PUSH	CX DX SI DI ES BP       ;Store registers...
+		PUSH	CX DX SI DI ES BP	;Store registers...
 		PUSH	CS
 		POP	DS
 		XOR	AX,AX
@@ -2898,9 +2898,9 @@ emminit:
 		MOV	WORD PTR ES:[SI],OFFSET int67;set int67 offset.
 		MOV	ES:[SI+2],CS		;set int67 segment.
 		CALL	getprm			;get parameters
-                test    sysflg,1
-                jz      emminit1
-                call    set32
+		test	sysflg,1
+		jz	emminit1
+		call	set32
 emminit1:
 		MOV	SI,OFFSET start_msg	;display start messege.
 		CALL	strdsp
@@ -2923,8 +2923,8 @@ emminit1:
 		MOV	byte ptr es:[DI].handle_flag,1;set system handle active.
 		INC	es:handle_count		;handle count up
 		MOV	AX,OFFSET emminit	;make 4.0 break address...
-                test    sysflg,1
-                jz      emminit2
+		test	sysflg,1
+		jz	emminit2
 		MOV	AX,OFFSET func16	;make 3.2 break address...
 emminit2:
 		ADD	AX,0FH
@@ -2970,10 +2970,10 @@ getpr2:
 		CMP	AL,CR
 		JZ	getpr4
 		CMP	AL,'/'		;set page frame address?
-                jne     getpr5
-                inc     di
+		jne	getpr5
+		inc	di
 		MOV	AL,ES:[DI]
-                OR      AL,20h          ;tolower
+		OR	AL,20h		;tolower
 		CMP	AL,'p'		;set page frame address?
 		JNZ	getpr3
 		INC	DI
@@ -3053,8 +3053,8 @@ instmsg		PROC	NEAR
 		MOV	DI,OFFSET pioadr
 		CALL	hbinasc
 		MOV	AX,total_pages
-                mov     cl,4
-                shl     ax,cl                   ; Multiply to 16
+		mov	cl,4
+		shl	ax,cl			; Multiply to 16
 		MOV	DI,OFFSET totmem
 		CALL	dbinasc
 		MOV	SI,OFFSET install_msg
@@ -3114,35 +3114,35 @@ ramch14:
 		CALL	strdsp
 		IN	AL,I8042+1		;logical page test...
 		OR	AL,4			;system memory parity disable
-                and     al,0feh
+		and	al,0feh
 		OUT	I8042+1,AL
 		MOV	DI,OFFSET log_page
 		MOV	DX,emsio
 		MOV	AL,pageofs		;get EMS logical page start no.
-                xor     ah,ah
+		xor	ah,ah
 		MOV	CX,PAGE_MAX
-                sub     cx,ax
-                jng     ramch16
-                mov     ah,al
+		sub	cx,ax
+		jng	ramch16
+		mov	ah,al
 		XOR	BX,BX
 ramch9:
 		PUSH	CX
-                MOV     AL,AH
-; JJP           OR      AL,80h
+		MOV	AL,AH
+; JJP		OR	AL,80h
 		OUT	DX,AL
 		CALL	imgchk			; checks the page is RAM
 		jc	ramch17
-                test    byte ptr sysflg,8       ;supress memory test
-                jne     ramch2
-                call    testkb			; check if user press ESC
-                jnc     ramch6
-                or      byte ptr sysflg,8       ;supress memory test
-                jmp     short ramch2
+		test	byte ptr sysflg,8	;supress memory test
+		jne	ramch2
+		call	testkb			; check if user press ESC
+		jnc	ramch6
+		or	byte ptr sysflg,8	;supress memory test
+		jmp	short ramch2
 ramch6:
-                test    byte ptr sysflg,2       ;long memory test
-                jne     ramch3
+		test	byte ptr sysflg,2	;long memory test
+		jne	ramch3
 		CALL	pagetst
-                jmp     short ramch4
+		jmp	short ramch4
 ramch3:
 		CALL	spagetst
 ramch4:
@@ -3185,14 +3185,14 @@ imgchk		PROC	NEAR
 		PUSH	AX CX SI DI DS
 		PUSH	CS			;set ES <- CS..
 		POP	ES
-                test    ah,3
-                jnz     imgchk2
+		test	ah,3
+		jnz	imgchk2
 		IN	AL,I8042+1
 		or	AL,2
 		OUT	I8042+1,AL
 imgchk2:
 		MOV	AL,AH
-                CBW
+		CBW
 		MOV	DI,OFFSET tstpage
 		CALL	dbinasc			;change binary -> ascii.
 		MOV	SI,OFFSET tstpage	;display message..
@@ -3203,11 +3203,11 @@ imgchk2:
 		MOV	AX,page_frame_seg
 		MOV	ES,AX
 		MOV	ax,chkchr
-                mov     es:[0],ax
-                cmp     es:[0],ax
-                jne     imgch1
+		mov	es:[0],ax
+		cmp	es:[0],ax
+		jne	imgch1
 		xor	ax,ax
-                mov     es:[0],ax
+		mov	es:[0],ax
 		CLC
 		jmp	imgch3
 imgch1:
@@ -3257,51 +3257,51 @@ spagetst	proc	near
 		xor	ax,ax
 		xor	di,di
 		mov	cx,2000h
-		rep	stosw                   ;Fill area with zeros
-                mov     bx,00ffh
-;       Pass 1
+		rep	stosw			;Fill area with zeros
+		mov	bx,00ffh
+;	Pass 1
 		xor	di,di
 		mov	cx,4000h
 spagets3:
-                mov     al,[di]
-                cmp     al,bh
-                jne     spagets2
-                mov     [di],bl
-                inc     di
-                loop    spagets3
-;       Pass 2
+		mov	al,[di]
+		cmp	al,bh
+		jne	spagets2
+		mov	[di],bl
+		inc	di
+		loop	spagets3
+;	Pass 2
 		xor	di,di
 		mov	cx,4000h
-                xchg    bl,bh
+		xchg	bl,bh
 spagets4:
-                mov     al,[di]
-                cmp     al,bh
-                jne     spagets2
-                mov     [di],bl
-                inc     di
-                loop    spagets4
-;       Pass 3
+		mov	al,[di]
+		cmp	al,bh
+		jne	spagets2
+		mov	[di],bl
+		inc	di
+		loop	spagets4
+;	Pass 3
 		mov	di,4000h
-                dec     di
-                xchg    bl,bh
+		dec	di
+		xchg	bl,bh
 spagets6:
-                mov     al,[di]
-                cmp     al,bh
-                jne     spagets2
-                mov     [di],bl
-                dec     di
-                jns     spagets6
-;       Pass 4
+		mov	al,[di]
+		cmp	al,bh
+		jne	spagets2
+		mov	[di],bl
+		dec	di
+		jns	spagets6
+;	Pass 4
 		mov	di,4000h
-                dec     di
-                xchg    bl,bh
+		dec	di
+		xchg	bl,bh
 spagets7:
-                mov     al,[di]
-                cmp     al,bh
-                jne     spagets2
-                mov     [di],bl
-                dec     di
-                jns     spagets7
+		mov	al,[di]
+		cmp	al,bh
+		jne	spagets2
+		mov	[di],bl
+		dec	di
+		jns	spagets7
 		clc
 spagets5:
 		pop	ds di cx bx ax
@@ -3309,7 +3309,7 @@ spagets5:
 spagets2:
 		stc
 		jmp	spagets5
-spagetst 	endp
+spagetst	endp
 ;--------------------------------------------------------------------
 ; Change data BYNARY -> ASCII (DEC)
 ; input
@@ -3498,8 +3498,8 @@ ascbin25:
 ;	DS:SI	: strings datas
 ;--------------------------------------------------------------------
 strdsp:
-                test    byte ptr cs:sysflg,4    ;supress output
-                jnz     strdsp1                 ;when in quet mode
+		test	byte ptr cs:sysflg,4	;supress output
+		jnz	strdsp1			;when in quet mode
 		PUSH	AX DX ES
 		PUSH	CS
 		POP	ES
@@ -3510,90 +3510,90 @@ strdsp:
 strdsp1:
 		RET
 ;
-;               Set EMS 3 mode
+;		Set EMS 3 mode
 ;
 set32:
-                mov     byte ptr msg_ver,'3'
-                mov     byte ptr msg_ver+2,'2'
-                mov     byte ptr f7_ver,32h
-                mov     byte ptr f_max,4fh
-                ret
+		mov	byte ptr msg_ver,'3'
+		mov	byte ptr msg_ver+2,'2'
+		mov	byte ptr f7_ver,32h
+		mov	byte ptr f_max,4fh
+		ret
 ;
-;               Test ESC from keyboard
+;		Test ESC from keyboard
 ;
 testkb:
-                push    ax
-                mov     ah,1
-                int     16h
-                jz      testkb1
-                xor     ah,ah
-                int     16h
-                cmp     al,27
-                jne     testkb1
-                stc
-                jmp     short testkb2
+		push	ax
+		mov	ah,1
+		int	16h
+		jz	testkb1
+		xor	ah,ah
+		int	16h
+		cmp	al,27
+		jne	testkb1
+		stc
+		jmp	short testkb2
 testkb1:
-                clc
+		clc
 testkb2:
-                pop     ax
-                ret
+		pop	ax
+		ret
 ;____________________________________________________________________
 ;
-;               This is "EXE" part of this driver
+;		This is "EXE" part of this driver
 ;
 ;____________________________________________________________________
 info:
-                push    cs
-                pop     ds
+		push	cs
+		pop	ds
 		mov	si, offset start_msg	; Display title & version
-                call    strdsp
-                mov     si, offset info_msg     ; Display switches
-                call    strdsp
-                mov     ax,4c00h                ;Exit to DOS
-                int     21h
+		call	strdsp
+		mov	si, offset info_msg	; Display switches
+		call	strdsp
+		mov	ax,4c00h		;Exit to DOS
+		int	21h
 ;____________________________________________________________________
 
 ;--------------------------------------------------------------------
 ;	EMM driver initial routine work data area
 ;--------------------------------------------------------------------
-start_msg       db      CR,LF
-                DB	'LTEMM: Lo-tech EMM Driver '
-msg_ver         db      'r01'
+start_msg	db	CR,LF
+		DB	'LTEMM: Lo-tech EMM Driver '
+msg_ver		db	'r01'
 		DB	CR,LF,'$'
-install_msg	label   byte
+install_msg	label	byte
 page_msg	DB	'Page frame specification: Frame Segment at '
 segadr		DB	'0000',CR,LF
 total_pg	DB	'0000 pages found on EMS board at '
 pioadr		DB	'0000',CR,LF
-                db      'Installation completed - '
-totmem          db      '0000K RAM Available.',CR,LF,LF,'$'
+		db	'Installation completed - '
+totmem		db	'0000K RAM Available.',CR,LF,LF,'$'
 hard_w_err	DB	'No EMS board found.',CR,LF,'$'
 nopage_err	DB	'No EMS memory found.',CR,LF,'$'
 notinst		DB	'Installation failed - No EMS available.',CR,LF,LF,'$'
 pagemsg		DB	'0000 Pages testing, Esc bypass test',CR,'$'
 tstpage		DB	'0000',CR,'$'
-info_msg        db       CR,LF
-		db      'Expanded Memory Manager for the Lo-tech 2MB EMS board.',CR,LF
+info_msg	db	 CR,LF
+		db	'Expanded Memory Manager for the Lo-tech 2MB EMS board.',CR,LF
 		db	 CR,LF
 		db	'Based on original works Copyright (c) 1988, Alex Tsourikov.',CR,LF
 		db	'All rights reserved.',CR,LF
-                db       CR,LF
-                db      'http://www.lo-tech.co.uk/wiki/2MB-EMS-Board',CR,LF
-                db      'Syntax:    DEVICE=LTEMM.EXE [/switches]',CR,LF
-                db       CR,LF
-                db      '  /p:nnnn - Page frame address(E000)',CR,LF
-                db      '  /i:nnn  - EMS i/o port base address(260)',CR,LF
-                db      '  /h:nnn  - Maximal number of handles(64)',CR,LF
-                db      '  /d:nn   - Depth of contest saves(5)',CR,LF
-;               db      '  /f:nnn  - First page number(0)',CR,LF
-                db      '  /n      - Bypass memory test',CR,LF
-                db      '  /x      - Perform long memory test',CR,LF
-                db      '  /3      - Use only EMS 3.2 functions',CR,LF
-                db      '  /q      - Quiet mode',CR,LF
-                db       CR,LF
-                db      'Defaults in parentheses.',CR,LF,'$'
+		db	 CR,LF
+		db	'http://www.lo-tech.co.uk/wiki/2MB-EMS-Board',CR,LF
+		db	'Syntax:    DEVICE=LTEMM.EXE [/switches]',CR,LF
+		db	 CR,LF
+		db	'  /p:nnnn - Page frame address(E000)',CR,LF
+		db	'  /i:nnn  - EMS i/o port base address(260)',CR,LF
+		db	'  /h:nnn  - Maximal number of handles(64)',CR,LF
+		db	'  /d:nn   - Depth of contest saves(5)',CR,LF
+;		db	'  /f:nnn  - First page number(0)',CR,LF
+		db	'  /n	   - Bypass memory test',CR,LF
+		db	'  /x	   - Perform long memory test',CR,LF
+		db	'  /3	   - Use only EMS 3.2 functions',CR,LF
+		db	'  /q	   - Quiet mode',CR,LF
+		db	 CR,LF
+		db	'Defaults in parentheses.',CR,LF,'$'
 pageofs		DB	0		;logical page no. offset data
 sysflg		DB	0		;system option flag
 chkchr		DW	55AAH
 code		ENDS
-		END     INFO
+		END	INFO

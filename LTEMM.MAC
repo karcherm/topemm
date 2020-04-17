@@ -1,9 +1,9 @@
 ;*****************************************************************
-;*							         *
-;*							         *
-;*	EMM/EMS driver program for BOCARAM30 Memory board        *
-;*							         *
-;*							         *
+;*                                                               *
+;*                                                               *
+;*      EMM/EMS driver program for BOCARAM30 Memory board        *
+;*                                                               *
+;*                                                               *
 ;*****************************************************************
 ;               Some useful macros ...
 ;Обмен байтами между SOURCE и DESTINATION
