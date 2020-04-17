@@ -2889,11 +2889,6 @@ emminit:
 		PUSH	CX DX SI DI ES BP	;Store registers...
 		PUSH	CS
 		POP	DS
-		XOR	AX,AX
-		MOV	ES,AX
-		MOV	SI,19CH
-		MOV	WORD PTR ES:[SI],OFFSET int67;set int67 offset.
-		MOV	ES:[SI+2],CS		;set int67 segment.
 		CALL	getprm			;get parameters
 		test	sysflg,1
 		jz	emminit1
@@ -2934,21 +2929,18 @@ emminit2:
 		LDS	BX,ptrsav
 		MOV	[BX].brkoff,0		;break address offset set.
 		MOV	[BX].brkseg,AX		;break address segment set.
+		XOR	AX,AX
+		MOV	ES,AX
+		MOV	SI,19CH
+		MOV	WORD PTR ES:[SI],OFFSET int67;set int67 offset.
+		MOV	ES:[SI+2],CS		;set int67 segment.
 		JMP	short emmint1
 errems:
 		MOV	SI,OFFSET notinst	;display error message
 		CALL	strdsp
-		MOV	emm_flag,0		;reset EMM install flag.
-		PUSH	CS
-		POP	ES
-		MOV	DI,OFFSET func_table
-		MOV	AX,OFFSET err80
-		MOV	CX,30
-		REPZ	STOSW
 		LDS	BX,ptrsav
-		MOV	AX,OFFSET func2		;set break address offset.
-		MOV	[BX].brkoff,AX		;set break address offset.
-		MOV	[BX].brkseg,CS		;set break address segment.
+		MOV	[BX].brkoff,0		;unload driver
+		MOV	[BX].brkseg,CS
 emmint1:
 		POP	BP ES DI SI DX CX	;Restore registers...
 		JMP	exit			;exit initial program.
@@ -3744,7 +3736,6 @@ bad_frame_msg	DB	'Page frame base address must be 16K aligned between C000 and E
 coll_shdw_msg	DB	'Page frame collides with shadow RAM',CR,LF,'$'
 coll_ems_msg	DB	'Page frame already in use',CR,LF,'$'
 pgframe_ab_msg	DB	'Chipset configured for page frame in A000/B000',CR,LF,'$'
-pageofs		DB	0		;logical page no. offset data
 sysflg		DB	0		;system option flag
 first_map_idx	DB	0		;index of first mapping register for page frame
 chkchr		DW	55AAH
