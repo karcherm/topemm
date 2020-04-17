@@ -3170,10 +3170,40 @@ ckems12:
 		INC	AX
 		CMP	AX,[DI+4]
 		JNE	ckems13
+; check for collision with UMB_DRVR
+		MOV	AL,0Ch
+		OUT	0ECh,AL
+		JMP	$+2
+		IN	AL,0EDh
+		MOV	BL,AL
+		MOV	AL,0Bh
+		OUT	0ECh,AL
+		JMP	$+2
+		IN	AL,0EDh
+		MOV	BH,AL
+		OR	AL,AL
+		JNS	ckems14			;EMS engine not in use yet
+		TEST	AL,10h
+		JNZ	ckems16			;A/B instead of C/E
+		MOV	CL,first_map_idx
+		SHR	BX,CL
+		TEST	BL,0Fh
+		JNZ	ckems15
+ckems14:
 		CLC				;reset CF
 		RET
 ckems13:
 		MOV	SI,OFFSET coll_shdw_msg
+		CALL	strdsp
+		STC
+		RET
+ckems16:
+		MOV	SI,OFFSET pgframe_ab_msg
+		CALL	strdsp
+		STC
+		RET
+ckems15:
+		MOV	SI,OFFSET coll_ems_msg
 		CALL	strdsp
 		STC
 		RET
@@ -3203,16 +3233,22 @@ ramch14:
 		ADD	SI,0400H
 		INC	BX			;page frame is consecutive
 		LOOP	ramch14
+		OUT	0FBh,AL			;disable TOPCAT protection
 		MOV	AL,0Ch
 		OUT	0ECh,AL
 		JMP	$+2
-		MOV	AL,DL
+		IN	AL,0EDh
+		JMP	$+2
+		OR	AL,DL
 		OUT	0EDh,AL
 		JMP	$+2
 		MOV	AL,0Bh
 		OUT	0ECh,AL
 		JMP	$+2
-		MOV	AL,DH
+		IN	AL,0EDh
+		JMP	$+2
+		OR	AL,DH
+		AND	AL,NOT 10H		;pageframe options C/D/E (instead of A/B/D)
 		OR	AL,80H			;enable EMS engine; no backfill
 		OUT	0EDh,AL
 		JMP	$+2
@@ -3706,6 +3742,8 @@ shadow_msg	DB	'00000K unused shadow RAM detected.',CR,LF,'$'
 high_msg	DB	'00000K high RAM detected.',CR,LF,'$'
 bad_frame_msg	DB	'Page frame base address must be 16K aligned between C000 and E000',CR,LF,'$'
 coll_shdw_msg	DB	'Page frame collides with shadow RAM',CR,LF,'$'
+coll_ems_msg	DB	'Page frame already in use',CR,LF,'$'
+pgframe_ab_msg	DB	'Chipset configured for page frame in A000/B000',CR,LF,'$'
 pageofs		DB	0		;logical page no. offset data
 sysflg		DB	0		;system option flag
 first_map_idx	DB	0		;index of first mapping register for page frame
