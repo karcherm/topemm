@@ -56,7 +56,7 @@ alter_map_off	DW	0
 alter_map_seg	DW	0
 page_ptr	DW	alloc_page	;allocate page buffer pointer.
 page_frame_seg	DW	0E000h		;Default physical page frame address
-total_pages	DW	18		;total logical page count
+total_pages	DW	0		;total logical page count
 un_alloc_pages	DW	PAGE_MAX	;unallocate logical page count
 handle_count	DW	0		;EMM handle used count
 jump_addr	DW	0		;EMM function jump address data area
@@ -105,12 +105,7 @@ log_page	LABEL	WORD
 ;	logical page addressing value
 ;
 log_page_map	LABEL	WORD
-		dw	40,41,42,43	;A segment
-		dw	44,45,46,47	;B segment
-		dw	      50,51	;C segment
-		dw	52,53,54,55	;D segment
-		dw	56,57,58,59	;E segment
-		dw	(PAGE_MAX-18) DUP(-1)
+		dw	PAGE_MAX DUP(-1)
 ;
 ;====================================================================
 ;
@@ -3039,6 +3034,14 @@ instmsg		PROC	NEAR
 		POP	DI CX BX AX
 		RET
 instmsg		ENDP
+
+;unit: half megabytes
+memsize		DB	    1,	   2,	  3,	 4
+		DB	    4,	   5,	  6,	 8
+		DB	    9,	  10,	 12,	16
+		DB	   16,	  17,	 18,	20
+		DB	   24,	  32,	 33,	34
+		DB	   36,	  40,	 48,	64
 ;--------------------------------------------------------------------
 ; Check TOPCAT chipset presence.
 ; output
@@ -3059,14 +3062,86 @@ ckemsio		PROC	NEAR
 		IN	AL,0EDh
 		AND	AL,0FCh
 		CMP	AL,0F4h			;331x (quarternary)
-		JNE	ckems3
-ckems4:
-		CLC				;reset CF
-		RET
+		JE	ckems4
 ckems3:
 		MOV	SI,OFFSET hard_w_err	;display hardware error messege.
 		CALL	strdsp
 		STC				;set CF
+		RET
+;Detect unused shadow memory
+ckems4:
+		PUSH	CS
+		POP	ES			;need ES=CS for dbinasc5
+		MOV	AH,0Dh			;index of AAXS
+		XOR	DI,DI
+		MOV	SI,28h			;physical address of A0000
+ckems5:
+		MOV	AL,AH
+		OUT	0ECh,AL
+		JMP	$+2
+		IN	AL,0EDh
+ckems6:
+		TEST	AL,3h
+		JNZ	ckems7
+		MOV	[DI].log_page_map,SI
+		ADD	DI,2
+ckems7:
+		SHR	AL,2
+		INC	SI
+		TEST	SI,3
+		JNZ	ckems6
+		INC	AH
+		CMP	AH,13h			;past FAXS
+		JNE	ckems5
+		MOV	AX,DI
+		SHL	AX,3
+		PUSH	DI
+		MOV	DI,OFFSET shadow_msg
+		CALL	dbinasc5
+		MOV	SI,OFFSET shadow_msg
+		CALL	strdsp
+		POP	DI
+;Detect high memory
+		MOV	AL,03h
+		OUT	0ECh,AL
+		JMP	$+2
+		IN	AL,0EDh
+		AND	AL,01Fh
+		CMP	AL,18h
+		JAE	ckems3
+		MOV	BX,OFFSET memsize
+		XLAT
+		CBW
+		SHL	AX,5			;convert half MB to pages
+		XCHG	BX,AX
+		MOV	AL,02			;index of SLTPR
+		OUT	0ECh,AL
+		JMP	$+2
+		IN	AL,0EDh
+		XOR	AH,AH
+		SHL	AX,2			;convert 64KB units to pages
+		MOV	CX,DI
+ckems8:
+		CMP	AX,BX
+		JAE	ckems9
+		MOV	[DI].log_page_map,AX
+		ADD	DI,2
+		INC	AX
+		JMP	ckems8
+ckems9:
+		SUB	CX,DI
+		SHR	DI,1
+		MOV	[total_pages],DI
+		JCXZ	ckems10
+		NEG	CX
+		SHL	CX,3
+		XCHG	AX,CX
+		MOV	DI,offset high_msg
+		CALL	dbinasc5
+		MOV	SI,OFFSET high_msg
+		CALL	strdsp
+ckems10:
+		CLC				;reset CF
 		RET
 ckemsio		ENDP
 ;--------------------------------------------------------------------
@@ -3109,11 +3184,9 @@ ramch14:
 		IN	AL,I8042+1		;logical page test...
 		OR	AL,4			;system memory parity disable
 		and	al,0feh
-		OUT	I8042+10,AL
+		OUT	I8042+1,AL
 		MOV	DI,OFFSET log_page
-		MOV	CX,total_pages
-		sub	cx,dx
-		jng	ramch16
+		MOV	CX,[total_pages]
 		XOR	BX,BX
 ramch9:
 		PUSH	CX
@@ -3329,7 +3402,7 @@ dbinas1:
 		DIV	BX
 		OR	AL,AL
 		JNZ	dbinas2
-		CMP	CL,4
+		CMP	SI,DI
 		JZ	dbinas4
 		CMP	BYTE PTR [SI],' '
 		JNZ	dbinas2
@@ -3591,6 +3664,8 @@ info_msg	db	 CR,LF
 		db	'  /q	   - Quiet mode',CR,LF
 		db	 CR,LF
 		db	'Defaults in parentheses.',CR,LF,'$'
+shadow_msg	DB	'00000K unused shadow RAM detected.',CR,LF,'$'
+high_msg	DB	'00000K high RAM detected.',CR,LF,'$'
 pageofs		DB	0		;logical page no. offset data
 sysflg		DB	0		;system option flag
 chkchr		DW	55AAH
