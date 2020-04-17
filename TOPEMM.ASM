@@ -3155,9 +3155,14 @@ ramchk		PROC	NEAR
 		PUSH	CS
 		POP	DS
 		MOV	DI,OFFSET map_table
-		MOV	CX,PHYS_PAGES
-		MOV	BL,8			;Mapping register for E000
 		MOV	SI,page_frame_seg
+		MOV	BX,SI			;Calculate mapping register index
+		SHR	BX,10			;One page = 2^10 paragraphs
+		SUB	BL,48			;first mapping register for page 48
+		MOV	DX,0Fh
+		MOV	CL,BL
+		SHL	DX,CL
+		MOV	CX,PHYS_PAGES
 ramch14:
 		MOV	[DI].phys_page_index,BL
 		MOV	[DI].log_page_data,0
@@ -3169,13 +3174,14 @@ ramch14:
 		MOV	AL,0Ch
 		OUT	0ECh,AL
 		JMP	$+2
-		MOV	AL,00h			;no EMS in C000/D000
+		MOV	AL,DL
 		OUT	0EDh,AL
 		JMP	$+2
 		MOV	AL,0Bh
 		OUT	0ECh,AL
 		JMP	$+2
-		MOV	AL,8Fh			;EMS enable at E000
+		MOV	AL,DH
+		OR	AL,80H			;enable EMS engine; no backfill
 		OUT	0EDh,AL
 		JMP	$+2
 		IN	AL,0E9h			;activate standard mapping
@@ -3655,7 +3661,7 @@ info_msg	db	 CR,LF
 		db	 CR,LF
 		db	'Syntax:    DEVICE=TOPEMM.EXE [/switches]',CR,LF
 		db	 CR,LF
-;		 db	 '  /p:nnnn - Page frame address(E000)',CR,LF
+		db	'  /p:nnnn - Page frame address(E000)',CR,LF
 		db	'  /h:nnn  - Maximal number of handles(64)',CR,LF
 		db	'  /d:nn   - Depth of contest saves(5)',CR,LF
 		db	'  /n	   - Bypass memory test',CR,LF
