@@ -20,6 +20,8 @@
 *									*
 *************************************************************************
 
+Please find binary releases at https://karcherm.github.io/topemm/
+
 Syntax:    DEVICE=LTEMM.EXE [/switches]
  /p:nnnn - Page frame address (E000)
  /h:nnn  - Maximal number of handles (64)
