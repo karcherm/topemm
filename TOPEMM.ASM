@@ -5,7 +5,7 @@
 ;
 ;************************************************************************
 ;*									*
-;*	EMS 4.0 Driver for TOPCAT mainboards, rev.01, Apr-20		*
+;*	EMS 4.0 Driver for TOPCAT mainboards, rev.02, Apr-20		*
 ;*									*
 ;*	This code is TASM source.					*
 ;*									*
@@ -3127,22 +3127,27 @@ ramchk		PROC	NEAR
 		PUSH	AX BX CX DX BP
 		PUSH	CS
 		POP	DS
+		OUT	0FBh,AL			;disable TOPCAT protection
 		MOV	DI,OFFSET map_table
 		MOV	SI,page_frame_seg
 		MOV	DX,0Fh
-		MOV	BL,first_map_idx
-		MOV	CL,BL
+		MOV	AL,first_map_idx
+		MOV	BL,AL
+		MOV	CL,AL
+		OR	AL,40h			;auto-increment
+		OUT	0E8h,AL
 		SHL	DX,CL
 		MOV	CX,PHYS_PAGES
+		MOV	AX,0FFFFH
 ramch14:
 		MOV	[DI].phys_page_index,BL
+		OUT	0EAh,AX			;no initialization might cause bus lockup
 		MOV	[DI].log_page_data,0
 		MOV	[DI].phys_seg_addr,SI
 		ADD	DI,SIZE phys_page_struct
 		ADD	SI,0400H
 		INC	BX			;page frame is consecutive
 		LOOP	ramch14
-		OUT	0FBh,AL			;disable TOPCAT protection
 		MOV	AL,0Ch
 		OUT	0ECh,AL
 		JMP	$+2
@@ -3176,9 +3181,9 @@ ramch14:
 		ADD	SI,CX
 		ADD	SI,CX
 		XOR	BX,BX
-ramch9:
 		MOV	AL,[map_table.phys_page_index]
 		OUT	0E8h,AL
+ramch9:
 		STD
 		LODSW
 		CLD
@@ -3623,7 +3628,7 @@ info:
 ;--------------------------------------------------------------------
 start_msg	db	CR,LF
 		DB	'TOPEMM: TOPCAT EMM Driver '
-msg_ver		db	'r01'
+msg_ver		db	'r02'
 		DB	CR,LF,'$'
 install_msg	label	byte
 page_msg	DB	'Page frame specification: Frame Segment at '
