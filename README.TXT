@@ -1,6 +1,6 @@
 *************************************************************************
 *									*
-*	EMS 4.0 Driver for TOPCAT mainboards, rev.01, Apr-20		*
+*	EMS 4.0 Driver for TOPCAT mainboards, rev.02, Apr-20		*
 *									*
 *	This code is TASM source.					*
 *									*
@@ -44,9 +44,16 @@ Issues remaining:
     - The lookup table for memory size needs to be interpreted in whole
       megabytes instead of half megabytes.
 
+History:
+ - r02: better initialization for compatiblity with software doing strange
+        things. Prevents crashes with the MS TCP stack and SPEEDSYS.
+ - r01: Initial release
+      
 Nice-to-have:
  - Support for the alternate mapping registers
  - Support for more mapped pages (EMS 4.0 only)
- - Support for non-volatile memory (my Quadtel BIOS does not clear EMS
-   during reboot)
  - Dynamic allocation of handle management and page management data.
+
+Cancelled ideas:
+ - Non-volatile memory. While the POST does not test memory allocated
+   to EMS, it likely does some writes for memory sizing.
