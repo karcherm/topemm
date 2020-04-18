@@ -3161,6 +3161,8 @@ ramch14:
 		OR	AL,80H			;enable EMS engine; no backfill
 		OUT	0EDh,AL
 		JMP	$+2
+		MOV	AL,0
+		OUT	0ECh,AL			;protect against rogue 0EDh writes (speedsys...)
 		IN	AL,0E9h			;activate standard mapping
 		MOV	SI,OFFSET pagemsg	;display page test msg..
 		CALL	strdsp
